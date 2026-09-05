@@ -5,6 +5,7 @@ from typing import Any
 
 import numpy as np
 import torch
+from torch import nn
 from PIL import Image
 from tqdm.auto import tqdm
 from transformers import AutoModel, AutoProcessor
@@ -44,6 +45,30 @@ class MedSigLIPEncoder:
             f"embedding_dim={self.embedding_dim}"
         )
 
+        # Spatial activation caching for Grad-CAM explainability
+        self.cached_spatial_activation: torch.Tensor | None = None
+        self.cached_embedding: torch.Tensor | None = None
+        self._target_layer = self._find_late_spatial_layer()
+        self._hook_handle = self._target_layer.register_forward_hook(self._spatial_hook)
+
+    def _find_late_spatial_layer(self) -> nn.Module:
+        vm = self.model.vision_model if hasattr(self.model, "vision_model") else self.model
+        if hasattr(vm, "post_layernorm"):
+            return vm.post_layernorm
+        elif hasattr(vm, "encoder") and hasattr(vm.encoder, "layers"):
+            return vm.encoder.layers[-1]
+        raise AttributeError("Could not locate late spatial layer in MedSigLIP vision model.")
+
+    def _spatial_hook(self, module: Any, inputs: Any, output: Any) -> None:
+        act = output[0] if isinstance(output, tuple) else output
+        self.cached_spatial_activation = act
+
+    def get_pooling_head(self) -> nn.Module:
+        vm = self.model.vision_model if hasattr(self.model, "vision_model") else self.model
+        if hasattr(vm, "head"):
+            return vm.head
+        raise AttributeError("Vision model does not have pooling head module.")
+
     @torch.inference_mode()
     def _infer_embedding_dim(self) -> int:
         dummy = Image.new("RGB", (448, 448))
@@ -64,8 +89,16 @@ class MedSigLIPEncoder:
             pixel_values=inputs["pixel_values"]
         )
         embeddings = vision_out.pooler_output
+        self.cached_embedding = embeddings
 
         return embeddings.detach().float().cpu().numpy()
+
+    def forward(self, pixel_values: torch.Tensor) -> torch.Tensor:
+        """Forward pass with pixel values; preserves spatial activation in hook."""
+        vision_out = self.model.vision_model(pixel_values=pixel_values)
+        embeddings = vision_out.pooler_output
+        self.cached_embedding = embeddings
+        return embeddings
 
     def extract_dataframe(
         self,
