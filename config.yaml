@@ -69,8 +69,17 @@ evaluation:
   save_confusion_matrix: true
 
 preprocessing:
-  enabled: false
-  name: "PLACEHOLDER"
+  enabled: true
+  illumination_correction: true
+  clahe: true
+  normalization: true
+  clahe_clip_limit: 2.0
+  clahe_grid_size: [8, 8]
+  gaussian_sigma: 30.0
+  p_min: 1.0
+  p_max: 99.0
+  mask_background: true
+  mask_threshold: 10
 
 output:
   root: "outputs"

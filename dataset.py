@@ -8,6 +8,8 @@ import pandas as pd
 from PIL import Image
 from torch.utils.data import Dataset
 
+from preprocessing import preprocess_fundus_image
+
 
 IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".JPG", ".JPEG", ".PNG"}
 
@@ -37,18 +39,11 @@ def build_image_index(image_root: Path) -> dict[str, Path]:
     return index
 
 
-def preprocess_image(image: Image.Image, cfg: dict[str, Any]) -> Image.Image:
-    """
-    Preprocessing hook.
-
-    The team's image preprocessing has already been implemented separately.
-    Keep this function as the integration point rather than duplicating it here.
-
-    Expected contract:
-        PIL.Image -> PIL.Image
-    """
-    _ = cfg
-    return image.convert("RGB")
+def preprocess_image(image: Image.Image, cfg: dict[str, Any] | None = None) -> Image.Image:
+    prep_cfg = cfg.get("preprocessing", {}) if cfg else {}
+    if not prep_cfg.get("enabled", True):
+        return image.convert("RGB")
+    return preprocess_fundus_image(image, prep_cfg)
 
 
 def load_dataset(
