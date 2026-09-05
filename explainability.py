@@ -3,6 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Optional, Tuple, Union
 
+import cv2
+import numpy as np
+from PIL import Image
 import torch
 import torch.nn.functional as F
 from torch import nn
@@ -40,6 +43,62 @@ class ExplainabilityOutput:
         if not (0 <= grade <= 4):
             raise ValueError(f"DR grade must be within [0, 4], got {grade}")
         return self.attributions[:, grade] if self.attributions.ndim == 4 else self.attributions[grade]
+
+    def overlay(
+        self,
+        image: Image.Image | np.ndarray,
+        grade: int | None = None,
+        index: int = 0,
+        alpha: float = 0.5,
+        colormap: int = cv2.COLORMAP_JET,
+        mask_background: bool = True,
+    ) -> Image.Image:
+        """Render heatmap overlay on the fundus image for predicted or specified grade."""
+        hm = self.get_attribution(grade) if grade is not None else self.predicted_attribution
+        return overlay_heatmap(image, hm, index=index, alpha=alpha, colormap=colormap, mask_background=mask_background)
+
+
+def overlay_heatmap(
+    image: Image.Image | np.ndarray,
+    heatmap: torch.Tensor | np.ndarray,
+    index: int = 0,
+    alpha: float = 0.5,
+    colormap: int = cv2.COLORMAP_JET,
+    mask_background: bool = True,
+) -> Image.Image:
+    """Overlay a continuous Grad-CAM heatmap onto the original fundus image."""
+    if isinstance(image, Image.Image):
+        img_np = np.asarray(image.convert("RGB"))
+    else:
+        img_np = np.asarray(image, dtype=np.uint8)
+
+    if isinstance(heatmap, torch.Tensor):
+        hm_np = heatmap.detach().cpu().float().numpy()
+    else:
+        hm_np = np.asarray(heatmap, dtype=np.float32)
+
+    while hm_np.ndim > 2:
+        idx = index if hm_np.shape[0] > index else 0
+        hm_np = hm_np[idx]
+
+    h, w = img_np.shape[:2]
+    if hm_np.shape != (h, w):
+        hm_np = cv2.resize(hm_np, (w, h), interpolation=cv2.INTER_LINEAR)
+
+    hm_min, hm_max = hm_np.min(), hm_np.max()
+    hm_norm = (hm_np - hm_min) / (hm_max - hm_min + 1e-8)
+    hm_uint8 = np.uint8(255 * hm_norm)
+
+    color_map = cv2.applyColorMap(hm_uint8, colormap)
+    color_map = cv2.cvtColor(color_map, cv2.COLOR_BGR2RGB)
+
+    blended = cv2.addWeighted(img_np, 1.0 - alpha, color_map, alpha, 0)
+
+    if mask_background:
+        gray = cv2.cvtColor(img_np, cv2.COLOR_RGB2GRAY)
+        blended[gray <= 10] = 0
+
+    return Image.fromarray(blended)
 
 
 def class_logit_gradient(
