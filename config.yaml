@@ -70,6 +70,8 @@ evaluation:
 
 preprocessing:
   enabled: true
+  grayscale: true
+  grayscale_mode: "green"   # green (highest DR lesion contrast) | luminance
   illumination_correction: true
   clahe: true
   normalization: true
