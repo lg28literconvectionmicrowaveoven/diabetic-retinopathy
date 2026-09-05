@@ -10,6 +10,8 @@ from PIL import Image
 from tqdm.auto import tqdm
 from transformers import AutoModel, AutoProcessor
 
+from dataset import preprocess_image
+
 
 class MedSigLIPEncoder:
     """
@@ -138,7 +140,7 @@ class MedSigLIPEncoder:
             images = []
             for path in batch_df["image_path"].tolist():
                 with Image.open(path) as image:
-                    images.append(image.convert("RGB"))
+                    images.append(preprocess_image(image, self.cfg))
 
             embeddings = self.encode(images)
             all_embeddings.append(embeddings.astype(np.float32))
