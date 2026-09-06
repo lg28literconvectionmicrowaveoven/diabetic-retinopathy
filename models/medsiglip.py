@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -8,6 +9,8 @@ import torch
 from torch import nn
 from PIL import Image
 from tqdm.auto import tqdm
+
+sys.modules.setdefault("torchaudio", None)
 from transformers import AutoModel, AutoProcessor
 
 from dataset import preprocess_image
