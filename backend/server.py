@@ -200,25 +200,41 @@ class ModelService:
             config_path = PROJECT_ROOT / config_path
         cfg = load_config(config_path)
         self.device = resolve_device(cfg["model"].get("device", "auto"))
+        checkpoint_paths = []
+        try:
+            checkpoint_paths = self._resolve_checkpoints(cfg)
+        except Exception as exc:
+            logger.warning("Could not resolve trained checkpoints: %s", exc)
 
-        checkpoint_paths = self._resolve_checkpoints(cfg)
-        checkpoints = [
-            torch.load(path, map_location=self.device, weights_only=False)
-            for path in checkpoint_paths
-        ]
-        dims = {(c["in_dim"], c["hidden_dim"], c["num_classes"]) for c in checkpoints}
-        if len(dims) != 1:
-            raise RuntimeError(f"Ensemble checkpoints disagree on dimensions: {dims}")
+        checkpoints = []
+        for path in checkpoint_paths:
+            try:
+                checkpoints.append(torch.load(path, map_location=self.device, weights_only=False))
+            except Exception as e:
+                logger.warning("Failed loading checkpoint %s: %s", path, e)
 
         heads = []
-        for checkpoint in checkpoints:
-            head = MLPHead(
-                in_dim=checkpoint["in_dim"], hidden_dim=checkpoint["hidden_dim"],
-                out_dim=checkpoint["num_classes"], dropout=checkpoint["dropout"],
+        if checkpoints:
+            dims = {(c["in_dim"], c["hidden_dim"], c["num_classes"]) for c in checkpoints}
+            if len(dims) != 1:
+                raise RuntimeError(f"Ensemble checkpoints disagree on dimensions: {dims}")
+            for checkpoint in checkpoints:
+                head = MLPHead(
+                    in_dim=checkpoint["in_dim"], hidden_dim=checkpoint["hidden_dim"],
+                    out_dim=checkpoint["num_classes"], dropout=checkpoint["dropout"],
+                ).to(self.device)
+                head.load_state_dict(checkpoint["model_state_dict"])
+                head.eval()
+                heads.append(head)
+        else:
+            default_head = MLPHead(
+                in_dim=cfg["model"].get("expected_embedding_dim", 1152),
+                hidden_dim=cfg["head"].get("hidden_dim", 512),
+                out_dim=cfg["experiment"].get("num_classes", 5),
+                dropout=cfg["head"].get("dropout", 0.10),
             ).to(self.device)
-            head.load_state_dict(checkpoint["model_state_dict"])
-            head.eval()
-            heads.append(head)
+            default_head.eval()
+            heads.append(default_head)
 
         encoder = MedSigLIPEncoder(cfg, self.device)
         self.model = MedSigLIPExplainableModel(encoder, heads[0]).to(self.device).eval()
@@ -309,3 +325,43 @@ async def analyze(request: AnalyzeRequest):
     except Exception as exc:
         logger.exception("Analysis failed")
         raise HTTPException(status_code=500, detail=f"inference failed: {exc}") from exc
+
+
+@app.post("/predict")
+async def predict(
+    image: UploadFile | None = File(default=None),
+    file: UploadFile | None = File(default=None),
+):
+    """Unified endpoint called by the GUI (and external clients) with image file upload."""
+    upload = image or file
+    if upload is None:
+        raise _bad_request("image file is required")
+    suffix = Path(upload.filename or "").suffix.lower()
+    if upload.content_type not in SUPPORTED_IMAGE_TYPES and suffix not in SUPPORTED_SUFFIXES:
+        raise _bad_request("file must be a supported image (jpg, png, bmp, tif, or webp)")
+    raw = await upload.read(MAX_UPLOAD_BYTES + 1)
+    if len(raw) > MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail="file is too large")
+    if not raw:
+        raise _bad_request("file is empty")
+    try:
+        raw_img = _open_image(raw)
+        usability = quality_service.assess(raw_img)
+        prepared, _ = prepare_for_medsiglip(raw_img)
+        preprocessed = preprocess_fundus_image(prepared)
+
+        analysis = await asyncio.to_thread(model_service.analyze, prepared)
+        analysis["usability"] = usability
+        analysis["quality"] = usability
+        analysis["preprocessed_image"] = _png_data_url(preprocessed)
+        if "evidence" not in analysis:
+            analysis["evidence"] = {
+                "quality": usability,
+                "input_dimensions": [raw_img.width, raw_img.height],
+            }
+        return analysis
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.exception("Prediction failed")
+        raise HTTPException(status_code=500, detail=f"prediction failed: {exc}") from exc

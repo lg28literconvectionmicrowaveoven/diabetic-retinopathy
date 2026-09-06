@@ -1,0 +1,110 @@
+{
+  "messidor2": {
+    "cohort_name": "Messidor-2 (Multi-Center Reference)",
+    "total_patients": 889,
+    "bilateral_patients": 855,
+    "single_eye_patients": 34,
+    "patient_accuracy": 0.7154,
+    "patient_balanced_accuracy": 0.7262,
+    "patient_macro_f1": 0.6769,
+    "patient_weighted_f1": 0.7263,
+    "patient_qwk": 0.7901,
+    "patient_referable_sensitivity": 0.7605,
+    "patient_referable_specificity": 0.9707,
+    "patient_referable_precision": 0.9325,
+    "patient_referable_auc": 0.9469,
+    "true_bilateral_concordance": 0.6538,
+    "pred_bilateral_concordance": 0.6667,
+    "confusion_matrix": [
+      [
+        338,
+        75,
+        2,
+        0,
+        8
+      ],
+      [
+        51,
+        99,
+        5,
+        0,
+        2
+      ],
+      [
+        20,
+        53,
+        135,
+        10,
+        8
+      ],
+      [
+        0,
+        1,
+        6,
+        43,
+        9
+      ],
+      [
+        0,
+        0,
+        1,
+        2,
+        21
+      ]
+    ]
+  },
+  "idrid_test": {
+    "cohort_name": "IDRiD Indian Cohort (Test Split)",
+    "total_patients": 66,
+    "bilateral_patients": 37,
+    "single_eye_patients": 29,
+    "patient_accuracy": 0.3333,
+    "patient_balanced_accuracy": 0.3147,
+    "patient_macro_f1": 0.2241,
+    "patient_weighted_f1": 0.2813,
+    "patient_qwk": 0.4248,
+    "patient_referable_sensitivity": 1.0,
+    "patient_referable_specificity": 0.5238,
+    "patient_referable_precision": 0.8182,
+    "patient_referable_auc": 0.9312,
+    "true_bilateral_concordance": 0.4865,
+    "pred_bilateral_concordance": 0.5676,
+    "confusion_matrix": [
+      [
+        9,
+        0,
+        2,
+        0,
+        8
+      ],
+      [
+        2,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        2,
+        0,
+        18
+      ],
+      [
+        0,
+        0,
+        1,
+        0,
+        13
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        11
+      ]
+    ]
+  }
+}

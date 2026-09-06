@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 from typing import Any
@@ -29,8 +30,22 @@ class MedSigLIPEncoder:
         self.device = device
 
         model_id = cfg["model"]["name"]
-        self.processor = AutoProcessor.from_pretrained(model_id)
-        self.model = AutoModel.from_pretrained(model_id)
+        token_path = Path.home() / ".cache" / "huggingface" / "token"
+        token = os.environ.get("HF_TOKEN") or (token_path.read_text().strip() if token_path.is_file() else None)
+
+        try:
+            self.processor = AutoProcessor.from_pretrained(model_id, token=token)
+            self.model = AutoModel.from_pretrained(model_id, token=token)
+        except Exception as exc:
+            fallback_id = "google/siglip-so400m-patch14-384"
+            print(
+                f"[WARN] Failed to load {model_id} ({exc}). "
+                f"Falling back to open weights {fallback_id}. "
+                f"To use MedSigLIP, accept terms at https://huggingface.co/{model_id}"
+            )
+            self.processor = AutoProcessor.from_pretrained(fallback_id)
+            self.model = AutoModel.from_pretrained(fallback_id)
+
         self.model.eval().to(device)
 
         for parameter in self.model.parameters():

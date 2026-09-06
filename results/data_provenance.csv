@@ -1,0 +1,17 @@
+parameter,value,unit,source_file,source_function,dataset,sample_count,measurement_method,source_type,date_measured,notes
+ai_inference_time_sec,1.174922,seconds,measure_simulink_parameters.py,benchmark_computational_performance,IDRiD,30,Empirical repeated GPU forward pass on Apple M4 (MPS),MODEL-MEASURED,2026-09-06,Preproc + Tokenize + ViT Backbone + Pooling + Classifier
+gradcam_generation_time_sec,0.410059,seconds,explainability.py,forward_with_explainability,IDRiD,30,Vectorized analytical VJP Grad-CAM with bilinear interpolation and alpha overlay,MODEL-MEASURED,2026-09-06,Calculated across all 5 DR grades simultaneously
+acceptable_image_rate,0.5146,fraction,backend/server.py,QualityService.assess,IDRiD,103,Laplacian variance & intensity contrast screening,DATASET-DERIVED,2026-09-06,Contrast >= 20 and Sharpness >= 12
+ungradeable_image_rate,0.0097,fraction,backend/server.py,QualityService.assess,IDRiD,103,Contrast < 10 or Sharpness < 3 trigger ungradeable flag,DATASET-DERIVED,2026-09-06,Triggers immediate re-capture at PHC
+enhancement_trigger_rate,0.4854,fraction,backend/server.py,QualityService.assess,IDRiD,103,Borderline + ungradeable images triggering illumination correction,DATASET-DERIVED,2026-09-06,Evaluated on IDRiD testing images
+grade0_rate,0.3301,fraction,data/idrid/labels.csv,setup_idrid_dataset,IDRiD,103,Expert clinician adjudicated ground truth,DATASET-DERIVED,2026-09-06,Indian diabetic retinopathy patient cohort
+grade1_rate,0.0485,fraction,data/idrid/labels.csv,setup_idrid_dataset,IDRiD,103,Expert clinician adjudicated ground truth,DATASET-DERIVED,2026-09-06,Mild NPDR
+grade2_rate,0.3107,fraction,data/idrid/labels.csv,setup_idrid_dataset,IDRiD,103,Expert clinician adjudicated ground truth,DATASET-DERIVED,2026-09-06,Moderate NPDR
+grade3_rate,0.1845,fraction,data/idrid/labels.csv,setup_idrid_dataset,IDRiD,103,Expert clinician adjudicated ground truth,DATASET-DERIVED,2026-09-06,Severe NPDR
+grade4_rate,0.1262,fraction,data/idrid/labels.csv,setup_idrid_dataset,IDRiD,103,Expert clinician adjudicated ground truth,DATASET-DERIVED,2026-09-06,Proliferative DR
+referable_DR_sensitivity,0.9688,fraction,metrics.py,compute_multiclass_metrics,IDRiD,103,TP / (TP + FN) on Grade >= 2 threshold,MODEL-MEASURED,2026-09-06,Referable sensitivity for clinical triage
+referable_DR_specificity,0.4872,fraction,metrics.py,compute_multiclass_metrics,IDRiD,103,TN / (TN + FP) on Grade >= 2 threshold,MODEL-MEASURED,2026-09-06,Clinical specificity
+average_prediction_confidence,0.7466,fraction,metrics.py,compute_calibration_metrics,IDRiD,103,Mean max softmax output probability,MODEL-MEASURED,2026-09-06,Confidence distribution across all 103 test scans
+human_review_rate,0.9515,fraction,measure_simulink_parameters.py,evaluate_dataset_and_clinical_metrics,IDRiD,103,Cases matching referable OR borderline quality OR conf < 0.60,MODEL-MEASURED,2026-09-06,Fraction of screened patients sent to ophthalmologist queue
+raw_image_size_mean_MB,0.4277,MB,measure_simulink_parameters.py,evaluate_dataset_and_clinical_metrics,IDRiD,103,Empirical file stat across all images in IDRiD set,DATASET-DERIVED,2026-09-06,Original high-res fundus camera captures
+acquisition_image_resolution,4288x2848,pixels,measure_simulink_parameters.py,evaluate_dataset_and_clinical_metrics,IDRiD,103,Image dimensions extracted from PIL Image.size,DATASET-DERIVED,2026-09-06,Kowa VX-10alpha fundus camera resolution in IDRiD cohort

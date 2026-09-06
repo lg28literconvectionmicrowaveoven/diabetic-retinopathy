@@ -1,0 +1,147 @@
+{
+  "train_dataset": "messidor2",
+  "num_images": 1744,
+  "num_patients": 889,
+  "grouped": true,
+  "n_folds": 5,
+  "folds": [
+    {
+      "fold": 0,
+      "seed": 42,
+      "checkpoint": "outputs/checkpoints/multiclass/fold_0/best.pt",
+      "test_macro_f1": 0.14311926605504588,
+      "test_referable_sensitivity": 0.0,
+      "test_referable_specificity": 1.0,
+      "test_referable_auc": 0.2813176616145995
+    },
+    {
+      "fold": 1,
+      "seed": 43,
+      "checkpoint": "outputs/checkpoints/multiclass/fold_1/best.pt",
+      "test_macro_f1": 0.15470383275261324,
+      "test_referable_sensitivity": 0.0,
+      "test_referable_specificity": 1.0,
+      "test_referable_auc": 0.6772311880225548
+    },
+    {
+      "fold": 2,
+      "seed": 44,
+      "checkpoint": "outputs/checkpoints/multiclass/fold_2/best.pt",
+      "test_macro_f1": 0.14100185528756956,
+      "test_referable_sensitivity": 0.0,
+      "test_referable_specificity": 1.0,
+      "test_referable_auc": 0.5427371541501976
+    },
+    {
+      "fold": 3,
+      "seed": 45,
+      "checkpoint": "outputs/checkpoints/multiclass/fold_3/best.pt",
+      "test_macro_f1": 0.14464944649446493,
+      "test_referable_sensitivity": 0.0,
+      "test_referable_specificity": 1.0,
+      "test_referable_auc": 0.546697420842944
+    },
+    {
+      "fold": 4,
+      "seed": 46,
+      "checkpoint": "outputs/checkpoints/multiclass/fold_4/best.pt",
+      "test_macro_f1": 0.15258467023172906,
+      "test_referable_sensitivity": 0.0,
+      "test_referable_specificity": 1.0,
+      "test_referable_auc": 0.4967923015236567
+    }
+  ],
+  "oof_internal": {
+    "accuracy": 0.5831422018348624,
+    "balanced_accuracy": 0.2,
+    "macro_f1": 0.14733792104310034,
+    "weighted_f1": 0.4295947984542231,
+    "qwk": 0.0,
+    "referable_sensitivity": 0.0,
+    "referable_specificity": 1.0,
+    "referable_precision": 0.0,
+    "referable_auc": 0.49152865126606926,
+    "confusion_matrix": [
+      [
+        1017,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        270,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        347,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        75,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        35,
+        0,
+        0,
+        0,
+        0
+      ]
+    ],
+    "classification_report": {
+      "0": {
+        "precision": 0.5831422018348624,
+        "recall": 1.0,
+        "f1-score": 0.7366896052155016,
+        "support": 1017.0
+      },
+      "1": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1-score": 0.0,
+        "support": 270.0
+      },
+      "2": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1-score": 0.0,
+        "support": 347.0
+      },
+      "3": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1-score": 0.0,
+        "support": 75.0
+      },
+      "4": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1-score": 0.0,
+        "support": 35.0
+      },
+      "accuracy": 0.5831422018348624,
+      "macro avg": {
+        "precision": 0.11662844036697248,
+        "recall": 0.2,
+        "f1-score": 0.14733792104310034,
+        "support": 1744.0
+      },
+      "weighted avg": {
+        "precision": 0.34005482756081146,
+        "recall": 0.5831422018348624,
+        "f1-score": 0.4295947984542231,
+        "support": 1744.0
+      }
+    }
+  }
+}

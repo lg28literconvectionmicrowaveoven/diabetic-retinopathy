@@ -5,6 +5,7 @@ from sklearn.metrics import (
     accuracy_score,
     balanced_accuracy_score,
     classification_report,
+    cohen_kappa_score,
     confusion_matrix,
     f1_score,
     precision_score,
@@ -40,6 +41,9 @@ def compute_multiclass_metrics(
         "weighted_f1": float(
             f1_score(y_true, pred, average="weighted", zero_division=0)
         ),
+        "qwk": float(
+            cohen_kappa_score(y_true, pred, weights="quadratic")
+        ) if len(np.unique(y_true)) > 1 else 0.0,
         "referable_sensitivity": float(
             recall_score(y_true_ref, y_pred_ref, zero_division=0)
         ),

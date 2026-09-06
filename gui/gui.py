@@ -269,7 +269,53 @@ class DRScreeningGUI:
             style="Result.TLabel",
         ).pack(anchor="w", pady=(4, 0))
 
-        
+        self.review_var = tk.StringVar(
+            value="Human review: —"
+        )
+        ttk.Label(
+            result_box,
+            textvariable=self.review_var,
+            style="Result.TLabel",
+        ).pack(anchor="w", pady=(4, 0))
+
+        self.explain_time_var = tk.StringVar(
+            value="Explainability: —"
+        )
+        ttk.Label(
+            result_box,
+            textvariable=self.explain_time_var,
+            style="Result.TLabel",
+        ).pack(anchor="w", pady=(4, 0))
+
+        evidence_box = ttk.LabelFrame(
+            side, text="Lesion / Evidence", padding=10
+        )
+        evidence_box.grid(
+            row=2, column=0, sticky="nsew", pady=(0, 10)
+        )
+        evidence_box.rowconfigure(0, weight=1)
+        evidence_box.columnconfigure(0, weight=1)
+
+        self.evidence_text = tk.Text(
+            evidence_box,
+            height=5,
+            wrap="word",
+            font=("Segoe UI", 9),
+            state="disabled",
+        )
+        self.evidence_text.grid(
+            row=0, column=0, sticky="nsew"
+        )
+        ev_scrollbar = ttk.Scrollbar(
+            evidence_box,
+            orient="vertical",
+            command=self.evidence_text.yview,
+        )
+        ev_scrollbar.grid(row=0, column=1, sticky="ns")
+        self.evidence_text.configure(
+            yscrollcommand=ev_scrollbar.set
+        )
+
         raw_box = ttk.LabelFrame(
             side, text="Backend JSON", padding=10
         )
@@ -783,6 +829,12 @@ class DRScreeningGUI:
         )
         self.referable_var.set(
             "Referable DR: —"
+        )
+        self.review_var.set(
+            "Human review: —"
+        )
+        self.explain_time_var.set(
+            "Explainability: —"
         )
         self._set_text(
             self.evidence_text, ""

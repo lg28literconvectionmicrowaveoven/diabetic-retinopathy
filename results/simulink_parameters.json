@@ -1,0 +1,471 @@
+{
+  "parameters": {
+    "ai_inference_time_sec": 1.1749219231972043,
+    "ai_inference_time_std_sec": 0.2534776156408056,
+    "ai_inference_time_median_sec": 1.0847372484968218,
+    "ai_inference_time_p95_sec": 1.7439911510446096,
+    "preprocessing_time_sec": 0.3172297902662346,
+    "encoder_backbone_time_sec": 0.7611245373993977,
+    "pooling_time_sec": 1.620553302927874e-05,
+    "classifier_time_sec": 0.0024796749326924327,
+    "gradcam_generation_time_sec": 0.4100588182993912,
+    "gradcam_generation_time_std_sec": 0.20500659673295887,
+    "gradcam_generation_time_p95_sec": 0.8071253465976027,
+    "total_ai_latency_with_gradcam_sec": 1.6672475015341963,
+    "throughput_images_per_sec": 0.5997909722940372,
+    "throughput_images_per_hour": 2159.2475002585343,
+    "model_total_parameters": 444056853,
+    "peak_memory_mb": 1004.5,
+    "image_quality_assessment_time_sec": 0.08225432909991165,
+    "acceptable_image_rate": 0.5145631067961165,
+    "borderline_image_rate": 0.47572815533980584,
+    "ungradeable_image_rate": 0.009708737864077669,
+    "enhancement_trigger_rate": 0.4854368932038835,
+    "grade0_rate": 0.3300970873786408,
+    "grade1_rate": 0.04854368932038835,
+    "grade2_rate": 0.3106796116504854,
+    "grade3_rate": 0.18446601941747573,
+    "grade4_rate": 0.1262135922330097,
+    "referable_dr_prevalence": 0.6213592233009708,
+    "non_referable_dr_prevalence": 0.3786407766990291,
+    "referable_DR_sensitivity": 0.96875,
+    "referable_DR_specificity": 0.48717948717948717,
+    "referable_DR_ppv": 0.7560975609756098,
+    "referable_DR_npv": 0.9047619047619048,
+    "referable_DR_auc": 0.8962339743589745,
+    "multiclass_accuracy": 0.32038834951456313,
+    "multiclass_macro_f1": 0.21753275729179347,
+    "quadratic_weighted_kappa": 0.41131917661818684,
+    "average_prediction_confidence": 0.746588679482636,
+    "median_prediction_confidence": 0.8394633531570435,
+    "expected_calibration_error": 0.4269299596837423,
+    "brier_score": 1.116257070313563,
+    "human_review_rate": 0.9514563106796117,
+    "auto_cleared_rate": 0.04854368932038835,
+    "explainability_time_per_review_sec": 0.4100588182993912,
+    "raw_image_size_mean_MB": 0.42771136644974495,
+    "raw_image_size_p95_MB": 0.7511037826538084,
+    "acquisition_image_width": 4288,
+    "acquisition_image_height": 2848,
+    "preprocessed_image_width": 384,
+    "preprocessed_image_height": 384
+  },
+  "computational_benchmark": {
+    "timings": {
+      "t_quality": {
+        "mean": 0.08225432909991165,
+        "std": 0.02711439012509797,
+        "median": 0.07767224999770406,
+        "p95": 0.10793403970201322,
+        "p99": 0.18283730513940108,
+        "min": 0.0578912089986261,
+        "max": 0.2114469169973745
+      },
+      "t_preproc": {
+        "mean": 0.3172297902662346,
+        "std": 0.07299089647331523,
+        "median": 0.300709437498881,
+        "p95": 0.43018216469754395,
+        "p99": 0.5635027253183945,
+        "min": 0.21534662500198465,
+        "max": 0.6094456249993527
+      },
+      "t_token": {
+        "mean": 0.09407171506585049,
+        "std": 0.09219236247498475,
+        "median": 0.04336554149631411,
+        "p95": 0.25143608750186075,
+        "p99": 0.3906158566119849,
+        "min": 0.025624791996960994,
+        "max": 0.42738866600120673
+      },
+      "t_backbone": {
+        "mean": 0.7611245373993977,
+        "std": 0.1272579140323718,
+        "median": 0.7269039585007704,
+        "p95": 0.9438522621971058,
+        "p99": 1.2376242751775137,
+        "min": 0.639828416002274,
+        "max": 1.3425739579979563
+      },
+      "t_pooling": {
+        "mean": 1.620553302927874e-05,
+        "std": 4.821360264486947e-06,
+        "median": 1.5020996215753257e-05,
+        "p95": 2.5756395916687312e-05,
+        "p99": 2.7993567564408294e-05,
+        "min": 9.916002454701811e-06,
+        "max": 2.8041999030392617e-05
+      },
+      "t_classifier": {
+        "mean": 0.0024796749326924327,
+        "std": 0.0011134195918637666,
+        "median": 0.0021651664974342566,
+        "p95": 0.004499864546960452,
+        "p99": 0.005505714070823161,
+        "min": 0.0010787499995785765,
+        "max": 0.005872250003449153
+      },
+      "t_pure_inference": {
+        "mean": 1.1749219231972043,
+        "std": 0.2534776156408056,
+        "median": 1.0847372484968218,
+        "p95": 1.7439911510446096,
+        "p99": 2.020081877710036,
+        "min": 0.9197286679991521,
+        "max": 2.052152832999127
+      },
+      "t_gradcam_hook": {
+        "mean": 5.586533297901042e-05,
+        "std": 5.229261107493075e-05,
+        "median": 4.1812494600890204e-05,
+        "p95": 0.00010692714931792574,
+        "p99": 0.00025744917787960745,
+        "min": 2.4042004952207208e-05,
+        "max": 0.0003152919962303713
+      },
+      "t_gradcam_grad": {
+        "mean": 0.0006311889335241479,
+        "std": 0.0002796668796009746,
+        "median": 0.0005572704976657405,
+        "p95": 0.0011949190527957398,
+        "p99": 0.001393896072113421,
+        "min": 0.0003356669985805638,
+        "max": 0.0014694170022266917
+      },
+      "t_gradcam_vjp": {
+        "mean": 0.05436891376642355,
+        "std": 0.011054967901470453,
+        "median": 0.055934874999366,
+        "p95": 0.06652281059941742,
+        "p99": 0.08406303343050242,
+        "min": 0.03307012499863049,
+        "max": 0.09091887500107987
+      },
+      "t_gradcam_maps": {
+        "mean": 0.000997320966901801,
+        "std": 0.0005530338457725907,
+        "median": 0.0007815624994691461,
+        "p95": 0.002000366849460988,
+        "p99": 0.0026215984344889883,
+        "min": 0.00040549999539507553,
+        "max": 0.002855000006093178
+      },
+      "t_gradcam_resize": {
+        "mean": 0.0022986820331425406,
+        "std": 0.0010262820785278419,
+        "median": 0.001914686999953119,
+        "p95": 0.003822102451522368,
+        "p99": 0.004192925426905277,
+        "min": 0.0010304169991286471,
+        "max": 0.004287416995794047
+      },
+      "t_gradcam_overlay": {
+        "mean": 0.35170684726642015,
+        "std": 0.1997983389621353,
+        "median": 0.29664458299885155,
+        "p95": 0.7248051900991399,
+        "p99": 1.1177944432893858,
+        "min": 0.2101909999983036,
+        "max": 1.190596332999121
+      },
+      "t_gradcam_total": {
+        "mean": 0.4100588182993912,
+        "std": 0.20500659673295887,
+        "median": 0.35220970799127826,
+        "p95": 0.8071253465976027,
+        "p99": 1.1897475687677073,
+        "min": 0.26824300100270193,
+        "max": 1.2526547910092631
+      },
+      "t_end_to_end": {
+        "mean": 1.6672475015341963,
+        "std": 0.4534168100432287,
+        "median": 1.502870812499168,
+        "p95": 2.576484964949483,
+        "p99": 3.304532596864156,
+        "min": 1.289665625001362,
+        "max": 3.4068191250044038
+      }
+    },
+    "n_measured": 30,
+    "n_warmup": 5,
+    "throughput_images_per_sec": 0.5997909722940372,
+    "throughput_images_per_hour": 2159.2475002585343,
+    "pure_inference_throughput_ips": 0.8511203853263664,
+    "pure_inference_throughput_iph": 3064.033387174919,
+    "parameter_counts": {
+      "backbone": 428225600,
+      "pooling_head": 15238352,
+      "mlp_classifier": 592901,
+      "total": 444056853
+    },
+    "resident_memory_mb": 1004.5,
+    "device": "mps",
+    "precision": "FP32",
+    "batch_size": 1
+  },
+  "explainability_correctness": {
+    "logits_match": true,
+    "predicted_grade_match": true,
+    "max_absolute_difference": 0.9999994039535522,
+    "mean_absolute_difference": 0.347633957862854,
+    "relative_error": 1.0,
+    "activation_shape": [
+      1,
+      729,
+      1152
+    ],
+    "num_tokens": 729,
+    "embedding_dim": 1152,
+    "grid_size": 27
+  },
+  "dataset_evaluation": {
+    "total_samples": 103,
+    "grade_rates": {
+      "grade0_rate": 0.3300970873786408,
+      "grade1_rate": 0.04854368932038835,
+      "grade2_rate": 0.3106796116504854,
+      "grade3_rate": 0.18446601941747573,
+      "grade4_rate": 0.1262135922330097
+    },
+    "grade_counts": {
+      "grade0_count": 34,
+      "grade1_count": 5,
+      "grade2_count": 32,
+      "grade3_count": 19,
+      "grade4_count": 13
+    },
+    "referable_counts": {
+      "non_referable": 39,
+      "referable": 64,
+      "non_referable_rate": 0.3786407766990291,
+      "referable_rate": 0.6213592233009708
+    },
+    "quality": {
+      "acceptable_count": 53,
+      "acceptable_rate": 0.5145631067961165,
+      "borderline_count": 49,
+      "borderline_rate": 0.47572815533980584,
+      "ungradable_count": 1,
+      "ungradable_rate": 0.009708737864077669,
+      "enhancement_trigger_rate": 0.4854368932038835
+    },
+    "clinical": {
+      "tp": 62,
+      "tn": 19,
+      "fp": 20,
+      "fn": 2,
+      "sensitivity": 0.96875,
+      "specificity": 0.48717948717948717,
+      "ppv": 0.7560975609756098,
+      "npv": 0.9047619047619048,
+      "fpr": 0.5128205128205128,
+      "fnr": 0.03125,
+      "accuracy": 0.32038834951456313,
+      "balanced_accuracy": 0.31911764705882356,
+      "macro_f1": 0.21753275729179347,
+      "qwk": 0.41131917661818684,
+      "referable_auc": 0.8962339743589745,
+      "confusion_matrix_5x5": [
+        [
+          16,
+          0,
+          5,
+          0,
+          13
+        ],
+        [
+          3,
+          0,
+          1,
+          0,
+          1
+        ],
+        [
+          1,
+          1,
+          4,
+          0,
+          26
+        ],
+        [
+          0,
+          0,
+          2,
+          0,
+          17
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          13
+        ]
+      ],
+      "per_grade": {
+        "grade0": {
+          "precision": 0.8,
+          "recall": 0.47058823529411764,
+          "f1": 0.5925925925925926
+        },
+        "grade1": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0
+        },
+        "grade2": {
+          "precision": 0.3333333333333333,
+          "recall": 0.125,
+          "f1": 0.18181818181818182
+        },
+        "grade3": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0
+        },
+        "grade4": {
+          "precision": 0.18571428571428572,
+          "recall": 1.0,
+          "f1": 0.3132530120481928
+        }
+      }
+    },
+    "calibration": {
+      "average_confidence": 0.746588679482636,
+      "median_confidence": 0.8394633531570435,
+      "std_confidence": 0.23247630619431867,
+      "confidence_correct": 0.7001302188093012,
+      "confidence_incorrect": 0.7684905252286366,
+      "confidence_by_grade": {
+        "grade0_conf": 0.6191536968245226,
+        "grade1_conf": 0.4041045308113098,
+        "grade2_conf": 0.7991203861311078,
+        "grade3_conf": 0.8242206714655224,
+        "grade4_conf": 0.9688338866600623
+      },
+      "confidence_referable": 0.841045088134706,
+      "confidence_non_referable": 0.5915832909253927,
+      "confidence_bands": {
+        "0.0-0.2": 0.0,
+        "0.2-0.4": 0.10679611650485436,
+        "0.4-0.6": 0.24271844660194175,
+        "0.6-0.8": 0.1262135922330097,
+        "0.8-1.0": 0.5242718446601942
+      },
+      "ece": 0.4269299596837423,
+      "brier_score": 1.116257070313563,
+      "bins": [
+        {
+          "bin_range": "0.00-0.10",
+          "count": 0,
+          "prop": 0.0,
+          "accuracy": 0.0,
+          "confidence": 0.0
+        },
+        {
+          "bin_range": "0.10-0.20",
+          "count": 0,
+          "prop": 0.0,
+          "accuracy": 0.0,
+          "confidence": 0.0
+        },
+        {
+          "bin_range": "0.20-0.30",
+          "count": 0,
+          "prop": 0.0,
+          "accuracy": 0.0,
+          "confidence": 0.0
+        },
+        {
+          "bin_range": "0.30-0.40",
+          "count": 11,
+          "prop": 0.1068,
+          "accuracy": 0.3636,
+          "confidence": 0.3602
+        },
+        {
+          "bin_range": "0.40-0.50",
+          "count": 13,
+          "prop": 0.1262,
+          "accuracy": 0.3846,
+          "confidence": 0.4558
+        },
+        {
+          "bin_range": "0.50-0.60",
+          "count": 12,
+          "prop": 0.1165,
+          "accuracy": 0.5,
+          "confidence": 0.5557
+        },
+        {
+          "bin_range": "0.60-0.70",
+          "count": 6,
+          "prop": 0.0583,
+          "accuracy": 0.5,
+          "confidence": 0.6446
+        },
+        {
+          "bin_range": "0.70-0.80",
+          "count": 7,
+          "prop": 0.068,
+          "accuracy": 0.1429,
+          "confidence": 0.7633
+        },
+        {
+          "bin_range": "0.80-0.90",
+          "count": 10,
+          "prop": 0.0971,
+          "accuracy": 0.2,
+          "confidence": 0.8653
+        },
+        {
+          "bin_range": "0.90-1.00",
+          "count": 44,
+          "prop": 0.4272,
+          "accuracy": 0.2727,
+          "confidence": 0.9654
+        }
+      ]
+    },
+    "human_review": {
+      "human_review_count": 98,
+      "human_review_rate": 0.9514563106796117,
+      "auto_cleared_count": 5,
+      "auto_cleared_rate": 0.04854368932038835,
+      "protocol": "Triage: referable (>=2) OR quality borderline/bad OR confidence < 0.60"
+    },
+    "image_size": {
+      "mean_mb": 0.42771136644974495,
+      "std_mb": 0.13554423876782207,
+      "median_mb": 0.3873891830444336,
+      "p95_mb": 0.7511037826538084,
+      "min_mb": 0.22353172302246094,
+      "max_mb": 0.8067398071289062,
+      "acquisition_resolution": "4288x2848",
+      "preprocessed_resolution": "384x384"
+    }
+  },
+  "messidor2_distribution": {
+    "total_images": 1744,
+    "counts": {
+      "0": 1017,
+      "2": 347,
+      "1": 270,
+      "3": 75,
+      "4": 35
+    },
+    "rates": {
+      "grade0_rate": 0.5831422018348624,
+      "grade2_rate": 0.19896788990825687,
+      "grade1_rate": 0.15481651376146788,
+      "grade3_rate": 0.0430045871559633,
+      "grade4_rate": 0.020068807339449542
+    },
+    "non_referable_count": 1287,
+    "referable_count": 457,
+    "non_referable_rate": 0.7379587155963303,
+    "referable_rate": 0.26204128440366975
+  }
+}

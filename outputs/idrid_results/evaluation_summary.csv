@@ -1,0 +1,11 @@
+image_id,true_grade,pred_grade,confidence,referable_true,referable_pred,overlay_path
+IDRiD_001,4,4,0.2384,1,1,outputs/idrid_results/IDRiD_001_trueG4_predG4_overlay.png
+IDRiD_002,4,4,0.2394,1,1,outputs/idrid_results/IDRiD_002_trueG4_predG4_overlay.png
+IDRiD_003,4,4,0.2425,1,1,outputs/idrid_results/IDRiD_003_trueG4_predG4_overlay.png
+IDRiD_004,4,4,0.2465,1,1,outputs/idrid_results/IDRiD_004_trueG4_predG4_overlay.png
+IDRiD_005,4,4,0.2442,1,1,outputs/idrid_results/IDRiD_005_trueG4_predG4_overlay.png
+IDRiD_006,3,4,0.2405,1,1,outputs/idrid_results/IDRiD_006_trueG3_predG4_overlay.png
+IDRiD_007,3,4,0.2388,1,1,outputs/idrid_results/IDRiD_007_trueG3_predG4_overlay.png
+IDRiD_008,2,4,0.2413,1,1,outputs/idrid_results/IDRiD_008_trueG2_predG4_overlay.png
+IDRiD_009,2,4,0.2335,1,1,outputs/idrid_results/IDRiD_009_trueG2_predG4_overlay.png
+IDRiD_010,2,4,0.2378,1,1,outputs/idrid_results/IDRiD_010_trueG2_predG4_overlay.png
