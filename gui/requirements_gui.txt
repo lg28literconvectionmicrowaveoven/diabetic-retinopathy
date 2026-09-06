@@ -1,0 +1,83 @@
+Pillow>=10.0
+requests>=2.31
+PyYAML>=6.0
+tkinterdnd2>=0.4.3
+
+'''
+need these from gradcam module (explainability.py):
+The rendered Grad-CAM heatmap image
+The raw Grad-CAM activation/heatmap matrix
+The coordinate metadata needed to map that heatmap back to the original uploaded image
+
+post prediction json response expected format:
+{
+  "status": "success",
+
+  "image": {
+    "filename": "patient_001.jpg",
+    "original_width": 1920,
+    "original_height": 1080
+  },
+
+  "preprocessing": {
+    "crop": {
+      "applied": true,
+      "bbox": {
+        "x": 300,
+        "y": 100,
+        "width": 1200,
+        "height": 850
+      }
+    },
+    "model_input": {
+      "width": 448,
+      "height": 448
+    }
+  },
+
+  "prediction": {
+    "dr_grade": 3,
+    "grade_name": "Severe NPDR",
+    "confidence": 0.914,
+    "probabilities": {
+      "0": 0.01,
+      "1": 0.04,
+      "2": 0.08,
+      "3": 0.914,
+      "4": 0.02
+    },
+    "referable_dr": true
+  },
+
+  "explainability": {
+    "method": "gradcam",
+    "target_grade": 3,
+
+    "heatmap": {
+      "width": 14,
+      "height": 14,
+      "values": [
+        [0.01, 0.03, 0.07],
+        [0.02, 0.15, 0.42]
+      ]
+    },
+
+    "heatmap_image": "BASE64_OR_FILE_REFERENCE",
+
+    "coordinate_system": {
+      "feature_map_size": {
+        "width": 14,
+        "height": 14
+      },
+      "mapped_to": "original_image"
+    }
+  },
+
+  "timing": {
+    "inference_ms": 312.4,
+    "gradcam_ms": 126.7,
+    "total_ms": 484.3
+  }
+}
+
+'''

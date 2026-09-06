@@ -1,0 +1,11 @@
+backend:
+  url: "http://127.0.0.1:8000"
+  endpoint: "/predict"
+  timeout_seconds: 120
+
+samples:
+  directory: "samples"
+
+ui:
+  title: "DR Screening — MedSigLIP"
+  geometry: "1280x800"
