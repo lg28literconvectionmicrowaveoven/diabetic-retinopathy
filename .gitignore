@@ -4,3 +4,7 @@ __pycache__/
 .DS_Store
 .venv/
 outputs/
+
+# Downloaded model artifacts (keep source code and model-fetch instructions tracked)
+models/*.pth
+models/*.pt

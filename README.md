@@ -11,3 +11,7 @@
 -https://www.mdpi.com/2306-5729/3/3/25 - Indian Diabetic Retinopathy Image Dataset (IDRiD): A Database for Diabetic Retinopathy Screening Research (validation set)
 
 -https://zenodo.org/records/17219542 (IDRiD dataset download)
+
+-https://ieeexplore.ieee.org/document/11500477 (reference paper)
+
+-https://github.com/justinengelmann/QuickQual (pretrained model for retinal scan quality)
