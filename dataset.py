@@ -10,7 +10,6 @@ from torch.utils.data import Dataset
 
 from preproc.denoise import preprocess_fundus_image
 
-
 IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".JPG", ".JPEG", ".PNG"}
 
 
@@ -39,7 +38,9 @@ def build_image_index(image_root: Path) -> dict[str, Path]:
     return index
 
 
-def preprocess_image(image: Image.Image, cfg: dict[str, Any] | None = None) -> Image.Image:
+def preprocess_image(
+    image: Image.Image, cfg: dict[str, Any] | None = None
+) -> Image.Image:
     prep_cfg = cfg.get("preprocessing", {}) if cfg else {}
     if not prep_cfg.get("enabled", True):
         return image.convert("RGB")
@@ -95,21 +96,20 @@ def load_dataset(
         if values.dtype == bool:
             mask = values
         else:
-            mask = values.astype(str).str.strip().str.lower().isin(
-                {"true", "1", "yes", "gradable"}
+            mask = (
+                values.astype(str)
+                .str.strip()
+                .str.lower()
+                .isin({"true", "1", "yes", "gradable"})
             )
         df = df[mask].copy()
 
     image_index = build_image_index(image_root)
-    df["image_path"] = df["image_id"].map(
-        lambda x: _resolve_image(image_index, x)
-    )
+    df["image_path"] = df["image_id"].map(lambda x: _resolve_image(image_index, x))
 
     missing_count = int(df["image_path"].isna().sum())
     if missing_count:
-        missing_ids = (
-            df.loc[df["image_path"].isna(), "image_id"].head(10).tolist()
-        )
+        missing_ids = df.loc[df["image_path"].isna(), "image_id"].head(10).tolist()
         raise FileNotFoundError(
             f"{dataset_name}: {missing_count} images could not be resolved. "
             f"Examples: {missing_ids}"
