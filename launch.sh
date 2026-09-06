@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# Drishti-AI: Rural India Diabetic Retinopathy Tele-Screening System
+# Inmarscan: Rural India Diabetic Retinopathy Tele-Screening System
 # Master Hackathon Launch & Orchestration Script
 # ==============================================================================
 
@@ -12,7 +12,7 @@ cd "$SCRIPT_DIR"
 show_help() {
     echo ""
     echo "=========================================================================="
-    echo "  Drishti-AI: Tele-Screening for Diabetic Retinopathy in Rural India"
+    echo "  Inmarscan: Rural India Diabetic Retinopathy Tele-Screening"
     echo "=========================================================================="
     echo "Usage: ./launch.sh [OPTION]"
     echo ""
