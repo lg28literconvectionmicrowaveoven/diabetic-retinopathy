@@ -1,7 +1,7 @@
-# Simulink Telemedicine Parameter Report: Rural India PHC Deployment
+# Inmarscan: Simulink Parameter Report (Rural India PHC Screening)
 
-## Executive Summary
-This document provides the complete empirical parameter dataset and provenance specification for the **Simulink / SimEvents Rural India Primary Health Centre (PHC) Diabetic Retinopathy Screening Simulation**.
+## Overview
+This document specifies the empirical parameters used for the **Inmarscan Simulink / SimEvents Rural India PHC Screening Simulation**.
 
 All quantities labeled **MODEL-MEASURED** or **DATASET-DERIVED** have been directly benchmarked and calculated from the operational MedSigLIP ViT foundation model, our standardized fundus preprocessing pipeline, and clinical ground truths from the **Indian Diabetic Retinopathy Image Dataset (IDRiD)** and **Messidor-2**.
 
