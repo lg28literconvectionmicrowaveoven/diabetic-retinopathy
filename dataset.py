@@ -8,7 +8,7 @@ import pandas as pd
 from PIL import Image
 from torch.utils.data import Dataset
 
-from preprocessing import preprocess_fundus_image
+from preproc.denoise import preprocess_fundus_image
 
 
 IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".JPG", ".JPEG", ".PNG"}

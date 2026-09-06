@@ -15,7 +15,7 @@ Example
 
 from __future__ import annotations
 
-from typing import Iterable
+from collections.abc import Iterable
 
 from PIL import Image
 
@@ -41,13 +41,19 @@ def otsu_threshold(values: Iterable[int]) -> int:
             continue
         mean_background = background_sum / background_count
         mean_foreground = (total_sum - background_sum) / foreground_count
-        variance = background_count * foreground_count * (mean_background - mean_foreground) ** 2
+        variance = (
+            background_count
+            * foreground_count
+            * (mean_background - mean_foreground) ** 2
+        )
         if variance > best_variance:
             best_threshold, best_variance = threshold, variance
     return best_threshold
 
 
-def fov_bounds(image: Image.Image, threshold: int | None) -> tuple[int, int, int, int, int]:
+def fov_bounds(
+    image: Image.Image, threshold: int | None
+) -> tuple[int, int, int, int, int]:
     """Return (left, top, right, bottom, threshold) for the retinal FOV.
 
     The green channel is used because fundus FOVs remain visible there even when
@@ -57,7 +63,9 @@ def fov_bounds(image: Image.Image, threshold: int | None) -> tuple[int, int, int
     rgb = image.convert("RGB")
     width, height = rgb.size
     green = list(rgb.getchannel("G").getdata())
-    chosen_threshold = threshold if threshold is not None else max(8, otsu_threshold(green) // 2)
+    chosen_threshold = (
+        threshold if threshold is not None else max(8, otsu_threshold(green) // 2)
+    )
 
     # Count pixels above threshold in each row and column.  A real FOV occupies
     # many pixels along either direction; a label or specular border artifact
@@ -71,14 +79,26 @@ def fov_bounds(image: Image.Image, threshold: int | None) -> tuple[int, int, int
             row_count[y] += 1
     min_column_support = max(2, round(height * 0.005))
     min_row_support = max(2, round(width * 0.005))
-    valid_columns = [x for x, count in enumerate(column_count) if count >= min_column_support]
+    valid_columns = [
+        x for x, count in enumerate(column_count) if count >= min_column_support
+    ]
     valid_rows = [y for y, count in enumerate(row_count) if count >= min_row_support]
     if not valid_columns or not valid_rows:
-        raise ValueError(f"no retinal FOV found with green-channel threshold {chosen_threshold}")
-    return min(valid_columns), min(valid_rows), max(valid_columns) + 1, max(valid_rows) + 1, chosen_threshold
+        raise ValueError(
+            f"no retinal FOV found with green-channel threshold {chosen_threshold}"
+        )
+    return (
+        min(valid_columns),
+        min(valid_rows),
+        max(valid_columns) + 1,
+        max(valid_rows) + 1,
+        chosen_threshold,
+    )
 
 
-def containing_square(left: int, top: int, right: int, bottom: int) -> tuple[int, int, int, int]:
+def containing_square(
+    left: int, top: int, right: int, bottom: int
+) -> tuple[int, int, int, int]:
     """Return the smallest square centered on the detected FOV's bounding box."""
     side = max(right - left, bottom - top)
     center_x = (left + right) / 2
@@ -99,8 +119,12 @@ def prepare_for_medsiglip(
     black-padded by Pillow so the complete detected retinal field is preserved.
     """
     image = image.convert("RGB")
-    fov_left, fov_top, fov_right, fov_bottom, used_threshold = fov_bounds(image, threshold)
-    crop_left, crop_top, crop_right, crop_bottom = containing_square(fov_left, fov_top, fov_right, fov_bottom)
+    fov_left, fov_top, fov_right, fov_bottom, used_threshold = fov_bounds(
+        image, threshold
+    )
+    crop_left, crop_top, crop_right, crop_bottom = containing_square(
+        fov_left, fov_top, fov_right, fov_bottom
+    )
 
     # PIL fills crop regions lying outside the source image with black.  This is
     # necessary only when a full FOV is against an image border, and is safer than
@@ -108,8 +132,6 @@ def prepare_for_medsiglip(
     crop = image.crop((crop_left, crop_top, crop_right, crop_bottom))
     prepared = crop.resize((448, 448), resample)
     metadata = {
-        "source_width": image.width,
-        "source_height": image.height,
         "threshold": used_threshold,
         "fov_left": fov_left,
         "fov_top": fov_top,

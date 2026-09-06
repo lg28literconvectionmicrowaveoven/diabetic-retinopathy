@@ -21,17 +21,23 @@ from __future__ import annotations
 from pathlib import Path
 
 import joblib
-import torch
 import timm
+import torch
 from PIL import Image
 from torchvision.transforms import functional as transform
 
-from .prepare_messidor_retina_448 import containing_square, fov_bounds
+from .crop import containing_square, fov_bounds
 
-QUICKQUAL_LABELS = ("good", "usable", "bad")  # Published QuickQual SVM probability order.
+QUICKQUAL_LABELS = (
+    "good",
+    "usable",
+    "bad",
+)  # Published QuickQual SVM probability order.
 
 
-def make_tensor(image: Image.Image, device: torch.device, threshold: int | None) -> torch.Tensor:
+def make_tensor(
+    image: Image.Image, device: torch.device, threshold: int | None
+) -> torch.Tensor:
     """Apply the RGB/512/[-1, 1] preprocessing used in QuickQual's README."""
     image = image.convert("RGB")
     left, top, right, bottom, _ = fov_bounds(image, threshold)
@@ -54,7 +60,9 @@ def load_quickqual_model(
         )
     classifier = joblib.load(svm_path)
     if not hasattr(classifier, "predict_proba"):
-        raise TypeError("the supplied model does not implement predict_proba; expected QuickQual's SVM .pkl")
+        raise TypeError(
+            "the supplied model does not implement predict_proba; expected QuickQual's SVM .pkl"
+        )
     encoder = timm.create_model("densenet121.tv_in1k", pretrained=True, num_classes=0)
     encoder.eval().to(device)
     return encoder, classifier, device
@@ -70,10 +78,18 @@ def assess_loaded_image(
     """Assess one raw, pre-CLAHE PIL fundus image with an already loaded model."""
     device = torch.device(device)
     with torch.inference_mode():
-        features = encoder(make_tensor(image, device, threshold)).squeeze().cpu().numpy().reshape(1, -1)
+        features = (
+            encoder(make_tensor(image, device, threshold))
+            .squeeze()
+            .cpu()
+            .numpy()
+            .reshape(1, -1)
+        )
     probabilities = classifier.predict_proba(features)[0]
     if len(probabilities) != len(QUICKQUAL_LABELS):
-        raise ValueError(f"expected a 3-class QuickQual SVM, received {len(probabilities)} probabilities")
+        raise ValueError(
+            f"expected a 3-class QuickQual SVM, received {len(probabilities)} probabilities"
+        )
     by_label = dict(zip(QUICKQUAL_LABELS, map(float, probabilities), strict=True))
     predicted = max(by_label, key=by_label.get)
     return {
@@ -81,7 +97,9 @@ def assess_loaded_image(
         "usable_probability": by_label["usable"],
         "bad_probability": by_label["bad"],
         "quality": predicted,
-        "decision": "reject_and_reacquire" if predicted == "bad" else "continue_to_dr_grading",
+        "decision": "reject_and_reacquire"
+        if predicted == "bad"
+        else "continue_to_dr_grading",
     }
 
 
