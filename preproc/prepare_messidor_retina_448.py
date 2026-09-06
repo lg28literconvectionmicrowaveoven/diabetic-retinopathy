@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Crop a complete retinal field of view and prepare 448x448 MedSigLIP inputs.
+"""Prepare an in-memory retinal image for the 448x448 MedSigLIP encoder.
 
 The retinal field is detected from the image itself; input images are never
 modified.  For every image, the script finds the non-black field-of-view (FOV),
@@ -8,29 +8,16 @@ then resizes that crop to 448x448.  A circular FOV necessarily leaves black
 corners in a square crop.  They are intentionally preserved so no retinal edge
 is cut off.
 
-Examples
---------
-    # One image
-    python tests/prepare_messidor_retina_448.py image.png prepared
-
-    # A directory; output keeps the source subdirectory structure
-    python tests/prepare_messidor_retina_448.py raw_messidor prepared_messidor
-
-Use --threshold only when the automatic threshold produces an incorrect FOV.
-The generated manifest records the detected FOV and crop rectangle for review.
+Example
+-------
+    prepared, metadata = prepare_for_medsiglip(pil_image)
 """
 
 from __future__ import annotations
 
-import argparse
-import csv
-from pathlib import Path
 from typing import Iterable
 
 from PIL import Image
-
-
-IMAGE_EXTENSIONS = {".bmp", ".jpeg", ".jpg", ".png", ".tif", ".tiff"}
 
 
 def otsu_threshold(values: Iterable[int]) -> int:
@@ -101,9 +88,17 @@ def containing_square(left: int, top: int, right: int, bottom: int) -> tuple[int
     return square_left, square_top, square_left + side, square_top + side
 
 
-def prepare_one(source: Path, destination: Path, threshold: int | None, resample: Image.Resampling) -> dict[str, object]:
-    with Image.open(source) as opened:
-        image = opened.convert("RGB")
+def prepare_for_medsiglip(
+    image: Image.Image,
+    threshold: int | None = None,
+    resample: Image.Resampling = Image.Resampling.BILINEAR,
+) -> tuple[Image.Image, dict[str, object]]:
+    """Return a 448x448 RGB PIL image and detected FOV/crop metadata.
+
+    The input image is not modified.  Crop regions beyond its boundary are
+    black-padded by Pillow so the complete detected retinal field is preserved.
+    """
+    image = image.convert("RGB")
     fov_left, fov_top, fov_right, fov_bottom, used_threshold = fov_bounds(image, threshold)
     crop_left, crop_top, crop_right, crop_bottom = containing_square(fov_left, fov_top, fov_right, fov_bottom)
 
@@ -112,12 +107,7 @@ def prepare_one(source: Path, destination: Path, threshold: int | None, resample
     # shifting/cutting the crop because the requested policy is to retain all FOV.
     crop = image.crop((crop_left, crop_top, crop_right, crop_bottom))
     prepared = crop.resize((448, 448), resample)
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    prepared.save(destination)
-
-    return {
-        "source": str(source),
-        "output": str(destination),
+    metadata = {
         "source_width": image.width,
         "source_height": image.height,
         "threshold": used_threshold,
@@ -132,61 +122,4 @@ def prepare_one(source: Path, destination: Path, threshold: int | None, resample
         "crop_side": crop_right - crop_left,
         "resample": resample.name.lower(),
     }
-
-
-def sources(input_path: Path) -> list[Path]:
-    if input_path.is_file():
-        if input_path.suffix.lower() not in IMAGE_EXTENSIONS:
-            raise ValueError(f"unsupported image type: {input_path.suffix}")
-        return [input_path]
-    if input_path.is_dir():
-        return sorted(path for path in input_path.rglob("*") if path.is_file() and path.suffix.lower() in IMAGE_EXTENSIONS)
-    raise ValueError(f"input does not exist: {input_path}")
-
-
-def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("input", type=Path, help="Fundus image or directory of images")
-    parser.add_argument("output_dir", type=Path, help="Directory for prepared PNG images and manifest.csv")
-    parser.add_argument("--threshold", type=int, default=None, help="Fixed green-channel FOV threshold (0-255); default: automatic")
-    parser.add_argument(
-        "--resample",
-        choices=("bilinear", "lanczos"),
-        default="bilinear",
-        help="Resize method (default: bilinear, matching MedSigLIP evaluation guidance)",
-    )
-    args = parser.parse_args()
-    if args.threshold is not None and not 0 <= args.threshold <= 255:
-        parser.error("--threshold must be in the range 0-255")
-
-    image_paths = sources(args.input)
-    if not image_paths:
-        raise SystemExit(f"no supported images found below {args.input}")
-    input_root = args.input if args.input.is_dir() else args.input.parent
-    output_root = args.output_dir.resolve()
-    if args.input.is_dir() and output_root.is_relative_to(args.input.resolve()):
-        raise SystemExit("output_dir must not be inside the input directory")
-    resample_methods = {"bilinear": Image.Resampling.BILINEAR, "lanczos": Image.Resampling.LANCZOS}
-
-    rows: list[dict[str, object]] = []
-    for source in image_paths:
-        relative = source.relative_to(input_root)
-        destination = args.output_dir / relative.with_suffix(".png")
-        try:
-            rows.append(prepare_one(source, destination, args.threshold, resample_methods[args.resample]))
-            print(f"prepared: {source} -> {destination}")
-        except (OSError, ValueError) as exc:
-            print(f"skipped: {source}: {exc}")
-
-    if not rows:
-        raise SystemExit("no images were prepared")
-    manifest = args.output_dir / "manifest.csv"
-    with manifest.open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.DictWriter(handle, fieldnames=list(rows[0]))
-        writer.writeheader()
-        writer.writerows(rows)
-    print(f"prepared {len(rows)} image(s); review crop coordinates in {manifest}")
-
-
-if __name__ == "__main__":
-    main()
+    return prepared, metadata
