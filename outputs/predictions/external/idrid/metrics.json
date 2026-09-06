@@ -1,0 +1,105 @@
+{
+  "dataset": "idrid",
+  "role": "external",
+  "ensemble_size": 5,
+  "checkpoints": [
+    "outputs/checkpoints/multiclass/fold_0/best.pt",
+    "outputs/checkpoints/multiclass/fold_1/best.pt",
+    "outputs/checkpoints/multiclass/fold_2/best.pt",
+    "outputs/checkpoints/multiclass/fold_3/best.pt",
+    "outputs/checkpoints/multiclass/fold_4/best.pt"
+  ],
+  "metrics": {
+    "accuracy": 0.3300970873786408,
+    "balanced_accuracy": 0.2,
+    "macro_f1": 0.09927007299270073,
+    "weighted_f1": 0.1638438097937779,
+    "qwk": 0.0,
+    "referable_sensitivity": 0.0,
+    "referable_specificity": 1.0,
+    "referable_precision": 0.0,
+    "referable_auc": 0.7171474358974358,
+    "confusion_matrix": [
+      [
+        34,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        5,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        32,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        19,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        13,
+        0,
+        0,
+        0,
+        0
+      ]
+    ],
+    "classification_report": {
+      "0": {
+        "precision": 0.3300970873786408,
+        "recall": 1.0,
+        "f1-score": 0.49635036496350365,
+        "support": 34.0
+      },
+      "1": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1-score": 0.0,
+        "support": 5.0
+      },
+      "2": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1-score": 0.0,
+        "support": 32.0
+      },
+      "3": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1-score": 0.0,
+        "support": 19.0
+      },
+      "4": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1-score": 0.0,
+        "support": 13.0
+      },
+      "accuracy": 0.3300970873786408,
+      "macro avg": {
+        "precision": 0.06601941747572816,
+        "recall": 0.2,
+        "f1-score": 0.09927007299270073,
+        "support": 103.0
+      },
+      "weighted avg": {
+        "precision": 0.10896408709586201,
+        "recall": 0.3300970873786408,
+        "f1-score": 0.1638438097937779,
+        "support": 103.0
+      }
+    }
+  }
+}

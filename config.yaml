@@ -1,9 +1,9 @@
 #All dataset paths are relative to DATA_ROOT .
 data:
   #root contains:
-  #aptos2019-blindness-detection/
-  #messidor-2/
-  data_root: "/path/to/ssh-datasets"
+  #messidor2/
+  #idrid/
+  data_root: "data"
 
   #training dataset from the supplied benchmark notebook, for now aptos
   aptos:
@@ -15,7 +15,7 @@ data:
 
   # messidor for external
   messidor2:
-    root: "messidor-2"
+    root: "messidor2"
     images: "IMAGES/cropped_448x448"
     csv: "messidor_data.csv"
     image_id_column: "image_id"
@@ -24,9 +24,9 @@ data:
 
   #external dataset for idrid
   idrid:
-    enabled: false
+    enabled: true
     root: "idrid"
-    images: "images"
+    images: "extracted/B. Disease Grading/1. Original Images/b. Testing Set"
     csv: "labels.csv"
     image_id_column: "image_id"
     label_column: "grade"
@@ -47,11 +47,8 @@ experiment:
 #Patient pairing: both eyes of one patient must share a CV fold.
 #Validate the rule on the real CSV first: python tests/validate_messidor_pairs.py
 grouping:
-  mode: filename_regex
-  pattern: "^\\d{8}_(\\d+)_"   # single capture group = MESSIDOR-2 patient id (2nd field)
-  #mode: column                    # alternative: take the id from a CSV column
-  #column: "patient_id"
-  #mode: none                      # fallback: no grouping (risk of eye leakage)
+  mode: column
+  column: "patient_id"
 
 model:
   name: "google/medsiglip-448"

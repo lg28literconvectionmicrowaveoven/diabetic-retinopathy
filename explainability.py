@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import math
 from typing import Any, Optional, Tuple, Union
 
 import cv2
@@ -274,7 +275,8 @@ class MedSigLIPExplainableModel(nn.Module):
 
         alpha = grad_A.mean(dim=1)
         L = torch.einsum("bnd,bd->bn", A_rep, alpha)
-        cams = F.relu(L).view(batch_size, num_classes, self.grid_size, self.grid_size)
+        grid_size = int(math.isqrt(A.shape[1])) or self.grid_size
+        cams = F.relu(L).view(batch_size, num_classes, grid_size, grid_size)
 
         cam_min = cams.amin(dim=(-2, -1), keepdim=True)
         cam_max = cams.amax(dim=(-2, -1), keepdim=True)
@@ -285,7 +287,7 @@ class MedSigLIPExplainableModel(nn.Module):
 
         predicted_grade = logits.argmax(dim=-1)
         pred_cams = cams[torch.arange(batch_size, device=cams.device), predicted_grade]
-        spatial_2d = A.detach().view(batch_size, self.grid_size, self.grid_size, self.embed_dim)
+        spatial_2d = A.detach().view(batch_size, grid_size, grid_size, self.embed_dim)
 
         is_single = batch_size == 1
         if is_single:
@@ -360,7 +362,8 @@ class MedSigLIPExplainableModel(nn.Module):
             (grad_a,) = torch.autograd.grad(weighted.sum(), a_rep)
             alpha = grad_a.mean(dim=1)  # (B, D)
             cam = F.relu(torch.einsum("bnd,bd->bn", a_rep, alpha))
-            cam = cam.view(batch, self.grid_size, self.grid_size)
+            grid_size = int(math.isqrt(A.shape[1])) if A.shape[1] > 0 else self.grid_size
+            cam = cam.view(batch, grid_size, grid_size)
 
             cam_min = cam.amin(dim=(-2, -1), keepdim=True)
             cam_max = cam.amax(dim=(-2, -1), keepdim=True)
