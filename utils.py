@@ -44,3 +44,20 @@ def ensure_output_dirs(cfg: dict[str, Any]) -> None:
         "log_dir",
     ]:
         Path(output_cfg[key]).mkdir(parents=True, exist_ok=True)
+
+
+def discover_fold_checkpoints(checkpoint_dir: str | Path) -> list[Path]:
+    """Return the ensemble's head checkpoints, newest scheme first.
+
+    Prefers the grouped five-fold layout ``multiclass/fold_<i>/best.pt``;
+    falls back to the legacy repeated-seed layout ``multiclass/seed_<i>/best.pt``
+    (only the first seed — that scheme was a single split, not an ensemble).
+    """
+    base = Path(checkpoint_dir) / "multiclass"
+
+    folds = sorted(base.glob("fold_*/best.pt"), key=lambda p: int(p.parent.name.split("_")[1]))
+    if folds:
+        return folds
+
+    legacy = sorted(base.glob("seed_*/best.pt"))
+    return legacy[:1]

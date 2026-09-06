@@ -303,6 +303,76 @@ class MedSigLIPExplainableModel(nn.Module):
             heatmap_image=heatmap_img,
         )
 
+    def forward_ensemble_cams(
+        self,
+        pixel_values: torch.Tensor,
+        heads: list[nn.Module],
+        num_classes: int = 5,
+        target_size: Optional[Tuple[int, int]] = (448, 448),
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """Ensemble inference with one shared encoder forward pass.
+
+        Args:
+            pixel_values: preprocessed image tensor (B, 3, H, W).
+            heads: MLP heads (one per CV fold); all must accept the same
+                embedding dim and be in eval mode on the same device.
+            num_classes: DR grade count (5).
+            target_size: (H, W) to upsample the CAM to, or None for grid size.
+
+        Returns:
+            (mean_probs, averaged_cam):
+            mean_probs — softmax averaged over heads, shape (B, num_classes);
+            averaged_cam — per-head CAM of the ensemble-predicted class,
+            each min-max normalized, then averaged, shape (B, h, w).
+
+        The CAM math is identical to ``forward_with_explainability`` for a
+        single head, but each head only computes its VJP for the predicted
+        class, all from the one cached spatial activation — no encoder
+        backward pass, no repeated encoder forward.
+        """
+        vision_out = self.vision_encoder(pixel_values=pixel_values)
+        z = vision_out.pooler_output
+        self.cached_embedding = z
+
+        A = self.cached_spatial_activation
+        if A is None:
+            raise RuntimeError("Spatial activations were not captured. Check hook registration.")
+
+        pooling_head = self.get_pooling_head()
+        batch = pixel_values.shape[0]
+        rows = torch.arange(batch, device=z.device)
+
+        with torch.no_grad():
+            stacked = torch.stack(
+                [torch.softmax(head(z), dim=-1) for head in heads], dim=0
+            )
+        mean_probs = stacked.mean(dim=0)
+        predicted = mean_probs.argmax(dim=-1)
+
+        per_head_cams = []
+        for head in heads:
+            _, g_z = head.class_gradient_dz(z.detach(), num_classes=num_classes)
+            g_k = g_z[rows, predicted]  # (B, D) gradient of predicted class logit w.r.t. z
+
+            a_rep = A.detach().requires_grad_(True)
+            z_h = pooling_head(a_rep)  # (B, N, D) attention-pooled token projection
+            weighted = (z_h * g_k.unsqueeze(1)).sum(dim=-1)  # (B, N)
+            (grad_a,) = torch.autograd.grad(weighted.sum(), a_rep)
+            alpha = grad_a.mean(dim=1)  # (B, D)
+            cam = F.relu(torch.einsum("bnd,bd->bn", a_rep, alpha))
+            cam = cam.view(batch, self.grid_size, self.grid_size)
+
+            cam_min = cam.amin(dim=(-2, -1), keepdim=True)
+            cam_max = cam.amax(dim=(-2, -1), keepdim=True)
+            per_head_cams.append((cam - cam_min) / (cam_max - cam_min + 1e-8))
+
+        averaged = torch.stack(per_head_cams, dim=0).mean(dim=0)
+        if target_size is not None:
+            averaged = F.interpolate(
+                averaged.unsqueeze(1), size=target_size, mode="bilinear", align_corners=False
+            ).squeeze(1)
+        return mean_probs, averaged
+
     def close(self) -> None:
         if hasattr(self, "_hook_handle") and self._hook_handle is not None:
             self._hook_handle.remove()

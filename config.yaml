@@ -32,19 +32,26 @@ data:
     label_column: "grade"
 
 experiment:
-  train_dataset: "aptos"
-  external_test_dataset: "messidor2"
+  train_dataset: "messidor2"
+  external_test_dataset: "idrid"
 
   num_classes: 5
   referable_threshold: 2   #grade >= 2 => referable DR
 
-  #Dev split
-  test_size: 0.20
-  val_size: 0.15
-  split_seed: 42
+  #Grouped five-fold CV: 80% development per fold (85/15 train/val)
+  #-> ~68/12/20 effective train/val/internal-test sizes.
+  n_folds: 5
+  fold_seed: 42
+  dev_val_size: 0.15
 
-  #Repeated seeds for the MLP head
-  seeds: [13, 17, 23, 29, 31]
+#Patient pairing: both eyes of one patient must share a CV fold.
+#Validate the rule on the real CSV first: python tests/validate_messidor_pairs.py
+grouping:
+  mode: filename_regex
+  pattern: "^\\d{8}_(\\d+)_"   # single capture group = MESSIDOR-2 patient id (2nd field)
+  #mode: column                    # alternative: take the id from a CSV column
+  #column: "patient_id"
+  #mode: none                      # fallback: no grouping (risk of eye leakage)
 
 model:
   name: "google/medsiglip-448"

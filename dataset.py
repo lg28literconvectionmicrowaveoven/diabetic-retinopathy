@@ -47,6 +47,59 @@ def preprocess_image(
     return preprocess_fundus_image(image, prep_cfg)
 
 
+def derive_patient_ids(
+    df: pd.DataFrame,
+    grouping_cfg: dict[str, Any] | None,
+    strict: bool = True,
+) -> pd.DataFrame:
+    """Add a ``patient_id`` column according to the configured grouping mode.
+
+    Modes:
+      - ``filename_regex``: first capture group of ``pattern`` applied to image_id.
+      - ``column``: copy the named CSV column.
+      - ``none``/absent: every image becomes its own group (no grouping).
+
+    Grouping is what keeps both eyes of one patient inside the same CV fold, so
+    a misconfigured rule must fail loudly instead of silently ungrouping.
+    """
+    grouping_cfg = grouping_cfg or {}
+    mode = str(grouping_cfg.get("mode", "none")).lower()
+    df = df.copy()
+
+    if mode == "none" or not mode:
+        df["patient_id"] = df["image_id"]
+        return df
+
+    if mode == "filename_regex":
+        pattern = grouping_cfg.get("pattern")
+        if not pattern:
+            raise ValueError("grouping.mode=filename_regex requires grouping.pattern")
+        extracted = df["image_id"].astype(str).str.extract(pattern)
+        series = extracted.iloc[:, 0] if isinstance(extracted, pd.DataFrame) else extracted
+        # Nullable string dtype keeps pd.NA for non-matches (astype(str) would
+        # map NaN to the literal "nan" and hide ungrouped images).
+        df["patient_id"] = series.astype("string")
+    elif mode == "column":
+        column = grouping_cfg.get("column")
+        if not column:
+            raise ValueError("grouping.mode=column requires grouping.column")
+        if column not in df.columns:
+            raise ValueError(f"grouping.column '{column}' not found in dataset columns: {list(df.columns)}")
+        df["patient_id"] = df[column].astype(str)
+    else:
+        raise ValueError(f"Unknown grouping.mode '{mode}' (expected filename_regex, column, or none)")
+
+    ungrouped = df.loc[df["patient_id"].isna() | (df["patient_id"] == ""), "image_id"]
+    if len(ungrouped):
+        if strict:
+            raise ValueError(
+                f"grouping.mode={mode} left {len(ungrouped)} images without a patient_id. "
+                f"Examples: {ungrouped.head(10).tolist()}"
+            )
+        df["patient_id"] = df["patient_id"].fillna(f"__ungrouped__{df.index.astype(str)}")
+    return df
+
+
 def load_dataset(
     cfg: dict[str, Any],
     dataset_name: str,
@@ -117,6 +170,7 @@ def load_dataset(
 
     df["image_path"] = df["image_path"].astype(str)
     df["dataset"] = dataset_name
+    df = derive_patient_ids(df, cfg.get("grouping"))
     return df.reset_index(drop=True)
 
 

@@ -26,7 +26,7 @@ from explainability import MedSigLIPExplainableModel
 from models import MLPHead, MedSigLIPEncoder
 from preproc.crop import prepare_for_medsiglip
 from preproc.denoise import preprocess_fundus_image
-from utils import load_config, resolve_device
+from utils import discover_fold_checkpoints, load_config, resolve_device
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -171,11 +171,26 @@ class QualityService:
 
 
 class ModelService:
-    """Lazily loads the large encoder and checkpoint on the first analysis."""
+    """Lazily loads the large encoder and the fold-checkpoint ensemble on the
+    first analysis. One shared encoder forward feeds every fold head; their
+    softmax probabilities are averaged and their Grad-CAMs combined."""
 
     def __init__(self) -> None:
         self._lock = threading.Lock()
         self._loaded = False
+
+    def _resolve_checkpoints(self, cfg) -> list[Path]:
+        env_single = os.environ.get("DR_CHECKPOINT")
+        if env_single:
+            return [Path(env_single)]
+        paths = discover_fold_checkpoints(cfg["output"]["checkpoint_dir"])
+        if not paths or not all(p.is_file() for p in paths):
+            raise RuntimeError(
+                "No model checkpoints found. Expected "
+                f"{cfg['output']['checkpoint_dir']}/multiclass/fold_*/best.pt "
+                "(or legacy seed_*/best.pt, or DR_CHECKPOINT pointing at a file)."
+            )
+        return paths
 
     def _load(self) -> None:
         if self._loaded:
@@ -185,27 +200,36 @@ class ModelService:
             config_path = PROJECT_ROOT / config_path
         cfg = load_config(config_path)
         self.device = resolve_device(cfg["model"].get("device", "auto"))
-        default_checkpoint = (PROJECT_ROOT / cfg["output"]["checkpoint_dir"] / "multiclass"
-                              / f"seed_{cfg['experiment']['seeds'][0]}" / "best.pt")
-        checkpoint_path = Path(os.environ.get("DR_CHECKPOINT", default_checkpoint))
-        if not checkpoint_path.is_absolute():
-            checkpoint_path = PROJECT_ROOT / checkpoint_path
-        if not checkpoint_path.is_file():
-            raise RuntimeError(f"Model checkpoint not found: {checkpoint_path}")
 
-        checkpoint = torch.load(checkpoint_path, map_location=self.device, weights_only=False)
-        head = MLPHead(
-            in_dim=checkpoint["in_dim"], hidden_dim=checkpoint["hidden_dim"],
-            out_dim=checkpoint["num_classes"], dropout=checkpoint["dropout"],
-        ).to(self.device)
-        head.load_state_dict(checkpoint["model_state_dict"])
-        head.eval()
+        checkpoint_paths = self._resolve_checkpoints(cfg)
+        checkpoints = [
+            torch.load(path, map_location=self.device, weights_only=False)
+            for path in checkpoint_paths
+        ]
+        dims = {(c["in_dim"], c["hidden_dim"], c["num_classes"]) for c in checkpoints}
+        if len(dims) != 1:
+            raise RuntimeError(f"Ensemble checkpoints disagree on dimensions: {dims}")
+
+        heads = []
+        for checkpoint in checkpoints:
+            head = MLPHead(
+                in_dim=checkpoint["in_dim"], hidden_dim=checkpoint["hidden_dim"],
+                out_dim=checkpoint["num_classes"], dropout=checkpoint["dropout"],
+            ).to(self.device)
+            head.load_state_dict(checkpoint["model_state_dict"])
+            head.eval()
+            heads.append(head)
+
         encoder = MedSigLIPEncoder(cfg, self.device)
-        self.model = MedSigLIPExplainableModel(encoder, head).to(self.device).eval()
+        self.model = MedSigLIPExplainableModel(encoder, heads[0]).to(self.device).eval()
         self.processor = encoder.processor
+        self.heads = [head.to(self.device).eval() for head in heads]
         self.referable_threshold = int(cfg["experiment"].get("referable_threshold", 2))
         self._loaded = True
-        logger.info("DR model loaded from %s", checkpoint_path)
+        logger.info(
+            "DR ensemble loaded: %d head(s) from %s",
+            len(heads), [str(p) for p in checkpoint_paths],
+        )
 
     def analyze(self, image: Image.Image) -> dict[str, Any]:
         # Hooks used for Grad-CAM store activations on the model, so requests must
@@ -216,13 +240,13 @@ class ModelService:
             inputs = self.processor(images=[image], return_tensors="pt")
             pixel_values = inputs["pixel_values"].to(self.device)
             explain_started = time.perf_counter()
-            logits, explanation = self.model.forward_with_explainability(
-                pixel_values, target_size=(image.height, image.width), num_classes=5
+            probs, cam = self.model.forward_ensemble_cams(
+                pixel_values, self.heads,
+                num_classes=5, target_size=(image.height, image.width),
             )
             explain_ms = (time.perf_counter() - explain_started) * 1000
-            probabilities = torch.softmax(logits, dim=-1)[0]
-            grade = int(probabilities.argmax().item())
-            confidence = float(probabilities[grade].item())
+            grade = int(probs[0].argmax().item())
+            confidence = float(probs[0][grade].item())
             return {
                 "dr_grade": grade,
                 "confidence": round(confidence, 6),
@@ -230,7 +254,7 @@ class ModelService:
                 "human_review": grade >= self.referable_threshold,
                 "analyze_time_ms": round((time.perf_counter() - started) * 1000, 2),
                 "explainability_time_ms": round(explain_ms, 2),
-                "gradcam": {"regions": _regions_from_cam(explanation.predicted_attribution)},
+                "gradcam": {"regions": _regions_from_cam(cam)},
             }
 
 

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from preproc.preprocessing import (
+from preproc.denoise import (
     apply_clahe,
     correct_illumination,
     detect_fundus_mask,

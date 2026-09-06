@@ -9,7 +9,13 @@ import torch
 from dataset import load_dataset
 from metrics import compute_multiclass_metrics, softmax
 from models import MLPHead, MedSigLIPEncoder
-from utils import ensure_output_dirs, load_config, resolve_device, save_json
+from utils import (
+    discover_fold_checkpoints,
+    ensure_output_dirs,
+    load_config,
+    resolve_device,
+    save_json,
+)
 
 
 def load_head(checkpoint_path: Path, device: torch.device) -> MLPHead:
@@ -30,10 +36,26 @@ def load_head(checkpoint_path: Path, device: torch.device) -> MLPHead:
     model.eval()
     return model
 
+
+def resolve_checkpoints(cfg, checkpoint_arg: str | None) -> list[Path]:
+    """Ensemble members: explicit --checkpoint (file or directory) or the
+    standard fold layout under checkpoint_dir/multiclass."""
+    if checkpoint_arg:
+        path = Path(checkpoint_arg)
+        if path.is_dir():
+            found = sorted(path.glob("fold_*/best.pt")) or sorted(path.glob("*/best.pt"))
+            if not found:
+                raise FileNotFoundError(f"No best.pt checkpoints under: {path}")
+            return found
+        return [path]
+    return discover_fold_checkpoints(cfg["output"]["checkpoint_dir"])
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", default="config.yaml")
-    parser.add_argument("--checkpoint", default=None)
+    parser.add_argument("--checkpoint", default=None,
+                        help="Single best.pt or a directory of fold_*/best.pt heads")
     parser.add_argument("--dataset", default=None)
     args = parser.parse_args()
 
@@ -46,25 +68,18 @@ def main():
         or cfg["experiment"]["external_test_dataset"]
     )
 
-    checkpoint_path = Path(
-        args.checkpoint
-        or (
-            Path(cfg["output"]["checkpoint_dir"])
-            / "multiclass"
-            / f"seed_{cfg['experiment']['seeds'][0]}"
-            / "best.pt"
-        )
-    )
-
-    if not checkpoint_path.exists():
+    checkpoint_paths = resolve_checkpoints(cfg, args.checkpoint)
+    missing = [p for p in checkpoint_paths if not p.is_file()]
+    if missing:
         raise FileNotFoundError(
-            f"Checkpoint not found: {checkpoint_path}. Run train.py first."
+            f"Checkpoint(s) not found: {[str(m) for m in missing]}. Run train.py first."
         )
 
     external_df = load_dataset(
         cfg,
         external_name,
-        require_gradable=(external_name == "messidor2"),
+        # Filters to the gradable flag when the dataset declares one; no-op otherwise.
+        require_gradable=True,
     )
 
     print(
@@ -91,22 +106,30 @@ def main():
     )
 
     embeddings = np.load(emb_path, mmap_mode="r")
-    head = load_head(checkpoint_path, device)
+
+    heads = [load_head(path, device) for path in checkpoint_paths]
+    print(f"Ensemble: {len(heads)} head(s) from {[str(p) for p in checkpoint_paths]}")
 
     x = torch.from_numpy(
         np.asarray(embeddings, dtype=np.float32)
     ).to(device)
 
     with torch.inference_mode():
-        logits = head(x).cpu().numpy()
+        per_head_probs = torch.stack(
+            [torch.softmax(head(x), dim=-1) for head in heads], dim=0
+        ).cpu().numpy()  # (n_heads, N, C)
 
-    probs = softmax(logits)
-    predictions = probs.argmax(axis=1)
+    mean_probs = per_head_probs.mean(axis=0)
+    # metrics helpers operate on logits; log of averaged probabilities is the
+    # canonical inverse (softmax(log p) == p)
+    mean_log_probs = np.log(mean_probs + 1e-12)
+
+    predictions = mean_probs.argmax(axis=1)
     targets = external_df["grade"].to_numpy(dtype=np.int64)
 
     metrics = compute_multiclass_metrics(
         targets,
-        logits,
+        mean_log_probs,
         cfg["experiment"]["referable_threshold"],
     )
 
@@ -121,8 +144,8 @@ def main():
         pred_dir / "predictions.npz",
         image_ids=external_df["image_id"].to_numpy(dtype=object),
         targets=targets,
-        logits=logits,
-        probs=probs,
+        probs=mean_probs,
+        per_head_probs=per_head_probs,
         predictions=predictions,
     )
 
@@ -131,11 +154,15 @@ def main():
     ].copy()
 
     prediction_df["predicted_grade"] = predictions
-    prediction_df["prediction_confidence"] = probs.max(axis=1)
+    prediction_df["prediction_confidence"] = mean_probs.max(axis=1)
     prediction_df["predicted_referable"] = (
         predictions
         >= cfg["experiment"]["referable_threshold"]
     ).astype(int)
+    head_predictions = per_head_probs.argmax(axis=2)  # (n_heads, N)
+    prediction_df["head_agreement"] = (
+        (head_predictions == predictions[None, :]).all(axis=0).astype(int)
+    )
 
     prediction_df.to_csv(
         pred_dir / "predictions.csv",
@@ -144,14 +171,16 @@ def main():
 
     save_json(
         {
-            "checkpoint": str(checkpoint_path),
             "dataset": external_name,
+            "role": "external",
+            "ensemble_size": len(heads),
+            "checkpoints": [str(p) for p in checkpoint_paths],
             "metrics": metrics,
         },
         pred_dir / "metrics.json",
     )
 
-    print("\nExternal evaluation:")
+    print("\nExternal evaluation (probability-averaged ensemble):")
     for key in [
         "accuracy",
         "balanced_accuracy",

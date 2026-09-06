@@ -48,14 +48,16 @@ def test_explainability_pipeline():
     raw_vision.eval()
 
     forward_count = 0
-    orig_forward = raw_vision.encoder.forward
+    # transformers >= 4.5x nests the encoder under SiglipVisionModel.vision_model
+    vision_transformer = raw_vision.vision_model if hasattr(raw_vision, "vision_model") else raw_vision
+    orig_forward = vision_transformer.encoder.forward
 
     def counting_forward(*args, **kwargs):
         nonlocal forward_count
         forward_count += 1
         return orig_forward(*args, **kwargs)
 
-    raw_vision.encoder.forward = counting_forward
+    vision_transformer.encoder.forward = counting_forward
 
     batch_images = torch.randn(2, 3, 448, 448)
 
