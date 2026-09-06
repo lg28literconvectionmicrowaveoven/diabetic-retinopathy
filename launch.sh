@@ -17,19 +17,19 @@ show_help() {
     echo "Usage: ./launch.sh [OPTION]"
     echo ""
     echo "Options:"
-    echo "  --all         Launch both FastAPI backend and SvelteKit frontend (Full Web Demo)"
+    echo "  --gui         Launch Tkinter Desktop GUI (Official Edge Clinic UI)"
+    echo "  --all         Start FastAPI backend in background + launch Tkinter Desktop GUI"
     echo "  --backend     Start FastAPI backend server on http://127.0.0.1:8000"
-    echo "  --frontend    Start SvelteKit interactive frontend on http://127.0.0.1:5173"
-    echo "  --gui         Launch standalone desktop Tkinter GUI for edge clinics"
     echo "  --eval        Run external validation on IDRiD Indian cohort & patient pairing"
     echo "  --tables      Regenerate Black & White PPTX presentation tables & high-res PNGs"
     echo "  --test        Run full automated test suite (pytest)"
+    echo "  --frontend    (Optional) Start legacy SvelteKit web interface on :5173"
     echo "  --help, -h    Show this help message"
     echo ""
     echo "Examples:"
-    echo "  ./launch.sh --all       # Best for live hackathon presentation"
+    echo "  ./launch.sh --gui       # Launch official edge clinic desktop app"
+    echo "  ./launch.sh --all       # Launch backend + Tkinter GUI together"
     echo "  ./launch.sh --eval      # Re-compute clinical accuracy benchmarks"
-    echo "  ./launch.sh --tables    # Update presentation-ready tables"
     echo ""
 }
 
@@ -42,7 +42,7 @@ check_python() {
 
 check_node() {
     if ! command -v npm &> /dev/null; then
-        echo "[ERROR] npm is required for the frontend. Please install Node.js."
+        echo "[ERROR] npm is required for the optional web frontend. Please install Node.js."
         exit 1
     fi
 }
@@ -56,17 +56,42 @@ case "$MODE" in
         python3 -m uvicorn backend.server:app --host 127.0.0.1 --port 8000 --reload
         ;;
 
-    --frontend)
-        check_node
-        echo "[INFO] Starting SvelteKit Web UI on http://127.0.0.1:5173 ..."
-        cd frontend
-        npm run dev -- --host 127.0.0.1 --port 5173
-        ;;
-
     --gui)
         check_python
-        echo "[INFO] Launching Desktop Tkinter Edge GUI ..."
+        echo "[INFO] Launching Official Desktop Tkinter Edge GUI ..."
         python3 gui/gui.py
+        ;;
+
+    --all)
+        check_python
+        echo "=========================================================================="
+        echo "  Launching Inmarscan System (FastAPI Backend + Tkinter GUI)"
+        echo "=========================================================================="
+        echo "  Backend API:  http://127.0.0.1:8000 (Swagger docs: /docs)"
+        echo "  Desktop UI:   Tkinter Edge Clinic Screening GUI"
+        echo "=========================================================================="
+        echo "[INFO] Starting backend in background..."
+        python3 -m uvicorn backend.server:app --host 127.0.0.1 --port 8000 &
+        BACKEND_PID=$!
+
+        cleanup() {
+            echo ""
+            echo "[INFO] Shutting down background backend server..."
+            kill "$BACKEND_PID" 2>/dev/null || true
+            exit 0
+        }
+        trap cleanup SIGINT SIGTERM EXIT
+
+        sleep 1.5
+        echo "[INFO] Launching Desktop Tkinter GUI..."
+        python3 gui/gui.py
+        ;;
+
+    --frontend)
+        check_node
+        echo "[INFO] Starting optional SvelteKit Web UI on http://127.0.0.1:5173 ..."
+        cd frontend
+        npm run dev -- --host 127.0.0.1 --port 5173
         ;;
 
     --eval)
@@ -85,32 +110,6 @@ case "$MODE" in
         check_python
         echo "[INFO] Executing automated unit & integration test suite ..."
         pytest tests/ -v
-        ;;
-
-    --all)
-        check_python
-        check_node
-        echo "=========================================================================="
-        echo "  Launching Full Telemedicine Web Application (Backend + Frontend)"
-        echo "=========================================================================="
-        echo "  Backend API:  http://127.0.0.1:8000 (Swagger docs: /docs)"
-        echo "  Frontend UI:  http://127.0.0.1:5173"
-        echo "=========================================================================="
-        echo "[INFO] Starting backend in background..."
-        python3 -m uvicorn backend.server:app --host 127.0.0.1 --port 8000 &
-        BACKEND_PID=$!
-
-        cleanup() {
-            echo ""
-            echo "[INFO] Shutting down background servers..."
-            kill "$BACKEND_PID" 2>/dev/null || true
-            exit 0
-        }
-        trap cleanup SIGINT SIGTERM EXIT
-
-        echo "[INFO] Starting frontend..."
-        cd frontend
-        npm run dev -- --host 127.0.0.1 --port 5173
         ;;
 
     --help|-h|*)

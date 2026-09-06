@@ -96,10 +96,10 @@ Clone and run using the helper script:
 git clone https://github.com/Shiviatrix/diabetic-retinopathy.git
 cd diabetic-retinopathy
 
-# Launch full web app (FastAPI backend + SvelteKit frontend)
+# Launch full system (FastAPI backend + Tkinter desktop GUI)
 ./launch.sh --all
 
-# Or launch the desktop GUI (for offline PHC clinic laptops)
+# Or launch the desktop GUI directly (for offline PHC clinic laptops)
 ./launch.sh --gui
 
 # Run external evaluation on IDRiD
@@ -115,11 +115,11 @@ cd diabetic-retinopathy
 # Backend (FastAPI on :8000)
 python3 -m uvicorn backend.server:app --port 8000
 
-# Frontend (SvelteKit on :5173)
-cd frontend && npm install && npm run dev -- --port 5173
-
-# Desktop GUI (Tkinter)
+# Official Desktop GUI (Tkinter)
 python3 gui/gui.py
+
+# (Optional) Legacy web interface (SvelteKit on :5173)
+cd frontend && npm run dev -- --port 5173
 ```
 
 ---
@@ -127,12 +127,12 @@ python3 gui/gui.py
 ## What's in the repo
 
 ```text
+├── gui/
+│   ├── gui.py                    # Official Tkinter desktop application for rural nurse stations
+│   └── samples/                  # 10 clinical fundus sample images (Grades 0-4)
 ├── backend/
 │   └── server.py                 # FastAPI server (/preprocess, /analyze, /predict, /health)
-├── frontend/                     # SvelteKit web interface with Grad-CAM heatmap slider
-├── gui/
-│   ├── gui.py                    # Standalone Tkinter desktop app for rural nurse stations
-│   └── samples/                  # 10 clinical fundus sample images (Grades 0-4)
+├── frontend/                     # Optional legacy SvelteKit web interface
 ├── models/
 │   └── medsiglip.py              # Frozen MedSigLIP ViT encoder + MLP classification head
 ├── tests/                        # 18 pytest unit and integration tests

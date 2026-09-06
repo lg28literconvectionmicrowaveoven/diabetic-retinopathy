@@ -108,13 +108,13 @@ class DRScreeningGUI:
 
         ttk.Label(
             header,
-            text="Diabetic Retinopathy Screening",
+            text="Inmarscan: Telemedicine Screening",
             style="Title.TLabel",
         ).pack(anchor="w")
 
         ttk.Label(
             header,
-            text="MedSigLIP + MLP Classifier Head backend with Grad-CAM evidence overlay",
+            text="MedSigLIP ViT Foundation Model + Analytical VJP Grad-CAM Evidence Overlay",
             style="Subtitle.TLabel",
         ).pack(anchor="w", pady=(2, 0))
 

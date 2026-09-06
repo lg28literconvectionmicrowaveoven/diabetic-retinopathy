@@ -7,5 +7,5 @@ samples:
   directory: "samples"
 
 ui:
-  title: "DR Screening — MedSigLIP"
+  title: "Inmarscan — Telemedicine Screening AI"
   geometry: "1280x800"
