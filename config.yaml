@@ -1,0 +1,92 @@
+#All dataset paths are relative to DATA_ROOT .
+data:
+  #root contains:
+  #aptos2019-blindness-detection/
+  #messidor-2/
+  data_root: "/path/to/ssh-datasets"
+
+  #training dataset from the supplied benchmark notebook, for now aptos
+  aptos:
+    root: "aptos2019-blindness-detection"
+    images: "train_images"
+    csv: "train.csv"
+    image_id_column: "id_code"
+    label_column: "diagnosis"
+
+  # messidor for external
+  messidor2:
+    root: "messidor-2"
+    images: "IMAGES/cropped_448x448"
+    csv: "messidor_data.csv"
+    image_id_column: "image_id"
+    label_column: "adjudicated_dr_grade"
+    gradable_column: "adjudicated_gradable"
+
+  #external dataset for idrid
+  idrid:
+    enabled: false
+    root: "idrid"
+    images: "images"
+    csv: "labels.csv"
+    image_id_column: "image_id"
+    label_column: "grade"
+
+experiment:
+  train_dataset: "aptos"
+  external_test_dataset: "messidor2"
+
+  num_classes: 5
+  referable_threshold: 2   #grade >= 2 => referable DR
+
+  #Dev split
+  test_size: 0.20
+  val_size: 0.15
+  split_seed: 42
+
+  #Repeated seeds for the MLP head
+  seeds: [13, 17, 23, 29, 31]
+
+model:
+  name: "google/medsiglip-448"
+  expected_embedding_dim: 1152
+  cache_embeddings: true
+  embedding_batch_size: 32
+  device: "auto"            #auto | cuda | cpu
+
+head:
+  type: "mlp"
+  hidden_dim: 512
+  dropout: 0.10
+  batch_size: 64
+  max_epochs: 30
+  patience: 5
+  learning_rate: 0.001
+  weight_decay: 0.01
+
+evaluation:
+  ece_bins: 10
+  save_predictions: true
+  save_confusion_matrix: true
+
+preprocessing:
+  enabled: true
+  grayscale: true
+  grayscale_mode: "green"   # green (highest DR lesion contrast) | luminance
+  illumination_correction: true
+  clahe: true
+  normalization: true
+  clahe_clip_limit: 2.0
+  clahe_grid_size: [8, 8]
+  gaussian_sigma: 30.0
+  p_min: 1.0
+  p_max: 99.0
+  mask_background: true
+  mask_threshold: 10
+
+output:
+  root: "outputs"
+  checkpoint_dir: "outputs/checkpoints"
+  embedding_dir: "outputs/embeddings"
+  prediction_dir: "outputs/predictions"
+  metric_dir: "outputs/metrics"
+  log_dir: "outputs/logs"
