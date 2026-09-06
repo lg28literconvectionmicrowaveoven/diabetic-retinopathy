@@ -106,13 +106,15 @@ def _regions_from_cam(cam: torch.Tensor, max_regions: int = 5) -> list[dict[str,
     if array.ndim != 2 or not np.isfinite(array).all() or float(array.max()) <= 0:
         return []
     # A relative threshold is robust to CAMs that are non-zero across the FOV.
-    mask = (array >= max(0.55, float(array.max()) * 0.70)).astype(np.uint8)
+    thresh_val = max(0.35, float(array.max()) * 0.60)
+    mask = (array >= thresh_val).astype(np.uint8)
     count, _, stats, _ = cv2.connectedComponentsWithStats(mask, connectivity=8)
     height, width = array.shape
     candidates: list[dict[str, float | bool]] = []
+    min_area = max(16, int(width * height * 0.00002))
     for label in range(1, count):
         x, y, box_width, box_height, area = stats[label]
-        if area < max(4, int(width * height * 0.001)):
+        if area < min_area:
             continue
         score = float(array[y : y + box_height, x : x + box_width].max())
         candidates.append({
@@ -120,6 +122,23 @@ def _regions_from_cam(cam: torch.Tensor, max_regions: int = 5) -> list[dict[str,
             "width": round(box_width / width, 6), "height": round(box_height / height, 6),
             "score": round(score, 6), "normalized": True,
         })
+
+    # Fallback to local maximum if connected components were too diffuse
+    if not candidates and float(array.max()) > 0.02:
+        _, max_v, _, max_l = cv2.minMaxLoc(array)
+        bw = int(width * 0.08)
+        bh = int(height * 0.08)
+        bx = max(0, max_l[0] - bw // 2)
+        by = max(0, max_l[1] - bh // 2)
+        candidates.append({
+            "x": round(bx / width, 6),
+            "y": round(by / height, 6),
+            "width": round(bw / width, 6),
+            "height": round(bh / height, 6),
+            "score": round(float(max_v), 6),
+            "normalized": True,
+        })
+
     return sorted(candidates, key=lambda region: float(region["score"]), reverse=True)[:max_regions]
 
 

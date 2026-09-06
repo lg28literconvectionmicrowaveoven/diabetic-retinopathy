@@ -18,6 +18,7 @@ show_help() {
     echo ""
     echo "Options:"
     echo "  --gui         Launch Tkinter Desktop GUI (Official Edge Clinic UI)"
+    echo "  --verify      Run quick verification script for GUI and realistic gradient"
     echo "  --all         Start FastAPI backend in background + launch Tkinter Desktop GUI"
     echo "  --backend     Start FastAPI backend server on http://127.0.0.1:8000"
     echo "  --eval        Run external validation on IDRiD Indian cohort & patient pairing"
@@ -60,6 +61,12 @@ case "$MODE" in
         check_python
         echo "[INFO] Launching Official Desktop Tkinter Edge GUI ..."
         python3 gui/gui.py
+        ;;
+
+    --verify)
+        check_python
+        echo "[INFO] Running GUI & Realistic Grad-CAM verification..."
+        python3 verify_gui_and_gradient.py
         ;;
 
     --all)
