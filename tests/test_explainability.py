@@ -10,6 +10,7 @@ if str(repo_root) not in sys.path:
 sys.modules["torchaudio"] = None
 
 import torch
+from PIL import Image
 from transformers.models.siglip.modeling_siglip import SiglipVisionConfig, SiglipVisionModel
 
 from explainability import MedSigLIPExplainableModel, class_logit_gradient
@@ -79,6 +80,12 @@ def test_explainability_pipeline():
         assert exp_output.spatial_activation.shape == (2, 28, 28, 1152)
         assert 0.0 <= exp_output.attributions.min().item() <= 1.0
         assert 0.0 <= exp_output.attributions.max().item() <= 1.0
+
+        # Test overlay generation
+        dummy_fundus = Image.new("RGB", (448, 448), color=(120, 60, 20))
+        overlay_img = exp_output.overlay(dummy_fundus)
+        assert isinstance(overlay_img, Image.Image)
+        assert overlay_img.size == (448, 448)
 
     print("All explainability tests passed successfully.")
 
