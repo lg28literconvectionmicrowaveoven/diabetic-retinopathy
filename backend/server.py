@@ -123,6 +123,53 @@ def _regions_from_cam(cam: torch.Tensor, max_regions: int = 5) -> list[dict[str,
     return sorted(candidates, key=lambda region: float(region["score"]), reverse=True)[:max_regions]
 
 
+class QualityService:
+    """Optional cached QuickQual gate with a deterministic local fallback."""
+
+    def __init__(self) -> None:
+        self._lock = threading.Lock()
+        self._attempted_load = False
+        self._components: tuple[Any, Any, Any] | None = None
+
+    def assess(self, image: Image.Image) -> str:
+        with self._lock:
+            if not self._attempted_load:
+                self._attempted_load = True
+                try:
+                    # QuickQual is deliberately loaded only once: loading its
+                    # DenseNet for every upload would make preprocessing unusable.
+                    from preproc.gate import load_quickqual_model
+                    model_path = Path(os.environ.get(
+                        "QUICKQUAL_MODEL", PROJECT_ROOT / "preproc" / "quickqual_dn121_512.pkl"
+                    ))
+                    self._components = load_quickqual_model(model_path)
+                except Exception as exc:  # A quality score must not block DR preprocessing.
+                    logger.warning("QuickQual unavailable; using basic quality check: %s", exc)
+            if self._components is not None:
+                try:
+                    from preproc.gate import assess_loaded_image
+                    encoder, classifier, device = self._components
+                    return str(assess_loaded_image(image, encoder, classifier, device)["quality"])
+                except Exception as exc:
+                    logger.warning("QuickQual assessment failed; using basic quality check: %s", exc)
+            return self._basic_assessment(image)
+
+    @staticmethod
+    def _basic_assessment(image: Image.Image) -> str:
+        """Safe fallback when optional QuickQual weights cannot be loaded."""
+        gray = np.asarray(image.convert("L"), dtype=np.uint8)
+        foreground = gray[gray > 10]
+        if foreground.size < max(100, gray.size // 100) or min(image.size) < 64:
+            return "bad"
+        contrast = float(np.std(foreground))
+        sharpness = float(cv2.Laplacian(gray, cv2.CV_64F).var())
+        if contrast < 10 or sharpness < 3:
+            return "bad"
+        if contrast < 20 or sharpness < 12:
+            return "usable"
+        return "good"
+
+
 class ModelService:
     """Lazily loads the large encoder and checkpoint on the first analysis."""
 
@@ -188,6 +235,7 @@ class ModelService:
 
 
 model_service = ModelService()
+quality_service = QualityService()
 
 
 @app.get("/health")
@@ -210,10 +258,13 @@ async def preprocess(file: UploadFile | None = File(default=None)):
     try:
         image = _open_image(raw)
         started = time.perf_counter()
+        # Quality is assessed on the unmodified upload, not the enhanced image.
+        usability = quality_service.assess(image)
         prepared, _ = prepare_for_medsiglip(image)
         result = preprocess_fundus_image(prepared)
         elapsed = (time.perf_counter() - started) * 1000
         return {
+            "status": "pass", "usability": usability,
             "image": _png_data_url(result), "preprocessing_time_ms": round(elapsed, 2),
             "width": result.width, "height": result.height,
         }

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from .preprocessing import (
+from .denoise import (
     apply_clahe,
     correct_illumination,
     detect_fundus_mask,
